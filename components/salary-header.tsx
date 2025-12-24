@@ -1,10 +1,15 @@
 "use client";
 
-import { Menu } from "lucide-react";
+import { Menu, ArrowLeft } from "lucide-react";
 import { useSidebar } from "@/components/sidebar-provider";
 import { Button } from "@/components/ui/button";
 
-export function SalaryHeader() {
+interface SalaryHeaderProps {
+  isCreateMode?: boolean;
+  onBack?: () => void;
+}
+
+export function SalaryHeader({ isCreateMode = false, onBack }: SalaryHeaderProps) {
   const { isCollapsed, toggleSidebar, toggleMobile } = useSidebar();
 
   return (
@@ -31,9 +36,20 @@ export function SalaryHeader() {
           <Menu className="h-5 w-5" />
         </Button>
 
-        <h1 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-pink-600 via-fuchsia-600 to-pink-600 bg-clip-text text-transparent">
-          Salary
-        </h1>
+        {isCreateMode ? (
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            className="gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to All Salaries
+          </Button>
+        ) : (
+          <h1 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-pink-600 via-fuchsia-600 to-pink-600 bg-clip-text text-transparent">
+            Salary
+          </h1>
+        )}
       </div>
     </div>
   );

@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -99,12 +100,19 @@ export function SalaryForm({
 
   // Watch form changes for real-time preview
   const watchedValues = form.watch();
+  const previousValuesRef = useRef<string>("");
 
   useEffect(() => {
     if (onFormChange) {
-      onFormChange(watchedValues);
+      const currentValuesString = JSON.stringify(watchedValues);
+      // Only call onFormChange if values actually changed
+      if (currentValuesString !== previousValuesRef.current) {
+        previousValuesRef.current = currentValuesString;
+        onFormChange(watchedValues);
+      }
     }
-  }, [watchedValues, onFormChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchedValues]);
 
   const handleSubmit = async (data: SalaryFormValues) => {
     await onSubmit(data);
