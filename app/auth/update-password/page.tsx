@@ -1,10 +1,32 @@
 import { UpdatePasswordForm } from "@/components/update-password-form";
+import Image from "next/image";
+import Link from "next/link";
+import strixLogo from "../../Strix-logo-1.png";
 
 export default function Page() {
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-sm">
-        <UpdatePasswordForm />
+    <div className="min-h-svh w-full relative overflow-hidden">
+      {/* Background gradient matching hero section */}
+      <div className="absolute inset-0 bg-gradient-to-br from-pink-50 via-rose-50 to-fuchsia-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(236,72,153,0.1),transparent_50%)]"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(217,70,239,0.1),transparent_50%)]"></div>
+      
+      <div className="relative flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+        <div className="w-full max-w-sm">
+          {/* Logo */}
+          <div className="flex justify-center mb-8">
+            <Link href="/">
+              <Image
+                src={strixLogo}
+                alt="Strix Logo"
+                width={150}
+                height={50}
+                className="h-12 w-auto"
+              />
+            </Link>
+          </div>
+          <UpdatePasswordForm />
+        </div>
       </div>
     </div>
   );

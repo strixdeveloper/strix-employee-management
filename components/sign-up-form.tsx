@@ -40,17 +40,39 @@ export function SignUpForm({
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/protected`,
+          emailRedirectTo: `${window.location.origin}/auth/confirm?next=/protected`,
         },
       });
-      if (error) throw error;
+      
+      // If user is created but email sending fails, still show success
+      // User can still login if email confirmation is disabled in Supabase settings
+      if (error) {
+        // Check if it's an email sending error but user was created
+        if (error.message?.toLowerCase().includes("email") && data?.user) {
+          // User was created, email sending failed - still redirect to success
+          router.push("/auth/sign-up-success");
+          return;
+        }
+        throw error;
+      }
+      
+      // Success - redirect to success page
       router.push("/auth/sign-up-success");
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      const errorMessage = error instanceof Error ? error.message : "An error occurred";
+      
+      // Provide more helpful error messages
+      if (errorMessage.toLowerCase().includes("email")) {
+        setError(
+          "Email configuration issue. Please check your Supabase email settings or contact support."
+        );
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -102,7 +124,11 @@ export function SignUpForm({
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button 
+                type="submit" 
+                className="w-full bg-gradient-to-r from-pink-500 to-fuchsia-500 hover:from-pink-600 hover:to-fuchsia-600 text-white shadow-lg shadow-pink-500/50 hover:shadow-xl hover:shadow-pink-500/50 transition-all duration-300" 
+                disabled={isLoading}
+              >
                 {isLoading ? "Creating an account..." : "Sign up"}
               </Button>
             </div>
