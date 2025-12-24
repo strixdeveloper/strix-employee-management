@@ -1,6 +1,9 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
+import Image from "next/image";
+import strixLogo from "@/app/Strix-logo-1.png";
+import { Mail, Globe, Phone } from "lucide-react";
 
 interface SalaryPreviewData {
   employee_id?: string;
@@ -80,70 +83,92 @@ export function SalaryPreview({ formData, employee }: SalaryPreviewProps) {
   const year = formData.year || new Date().getFullYear();
 
   return (
-    <Card className="h-full">
-      <CardContent className="p-6">
-        <div className="bg-white dark:bg-gray-900 rounded-lg border-2 border-gray-200 dark:border-gray-700 p-6 space-y-6 min-h-[800px]">
-          {/* Company Header */}
-          <div className="text-center border-b pb-4">
-            <h1 className="text-2xl font-bold mb-2">STRIX DEVELOPMENT PVT LTD</h1>
-            <p className="text-sm text-muted-foreground">
-              CIN: U72900HP2021PTC008329 | GST: 02ABFCS3765D1Z
+    <Card className="h-full flex flex-col">
+      <CardContent className="p-6 flex-1 overflow-y-auto custom-scrollbar">
+        <div className="bg-white dark:bg-gray-900 rounded-lg border-2 border-gray-200 dark:border-gray-700 p-8 space-y-6 min-h-[800px]">
+          {/* Company Header with Logo */}
+          <div className="text-center border-b border-[#D50260] pb-4">
+            <div className="flex items-center justify-center mb-4">
+              <Image
+                src={strixLogo}
+                alt="STRIX Logo"
+                width={120}
+                height={40}
+                className="h-auto"
+              />
+            </div>
+            <h1 className="text-2xl font-bold mb-2" style={{ color: "#D50260" }}>
+              STRIX DEVELOPMENT PVT LTD
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              CIN: U72900HP2021PTC008329
             </p>
-            <h2 className="text-xl font-semibold mt-4">Salary Slip</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              GST: 02ABFCS3765D1Z
+            </p>
+            <h2 className="text-xl font-semibold mt-4" style={{ color: "#D50260" }}>
+              Salary Slip
+            </h2>
           </div>
 
-          {/* Employee Details */}
-          <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="font-semibold">Employee Name:</span>{" "}
-                {employee?.name || "________________"}
-              </div>
-              <div>
-                <span className="font-semibold">Employee ID:</span>{" "}
-                {employee?.employee_id || "________________"}
-              </div>
-              <div>
-                <span className="font-semibold">Designation:</span>{" "}
-                {employee?.designation || "________________"}
-              </div>
-              <div>
-                <span className="font-semibold">Department:</span>{" "}
-                {employee?.department || "________________"}
-              </div>
-            </div>
-            <div className="text-sm">
-              <span className="font-semibold">Month:</span> {monthName || "________"} |{" "}
-              <span className="font-semibold">Year:</span> {year}
-            </div>
+          {/* Employee Details Table */}
+          <div className="space-y-3">
+            <table className="w-full border-collapse">
+              <tbody>
+                <tr className="border-b border-gray-300">
+                  <td className="py-2 px-3 font-semibold text-sm w-1/3">Employee Name:</td>
+                  <td className="py-2 px-3 text-sm">{employee?.name || "________________"}</td>
+                </tr>
+                <tr className="border-b border-gray-300">
+                  <td className="py-2 px-3 font-semibold text-sm">Employee ID:</td>
+                  <td className="py-2 px-3 text-sm">{employee?.employee_id || "________________"}</td>
+                </tr>
+                <tr className="border-b border-gray-300">
+                  <td className="py-2 px-3 font-semibold text-sm">Designation:</td>
+                  <td className="py-2 px-3 text-sm">{employee?.designation || "________________"}</td>
+                </tr>
+                <tr className="border-b border-gray-300">
+                  <td className="py-2 px-3 font-semibold text-sm">Department:</td>
+                  <td className="py-2 px-3 text-sm">{employee?.department || "________________"}</td>
+                </tr>
+                <tr className="border-b border-gray-300">
+                  <td className="py-2 px-3 font-semibold text-sm">Month:</td>
+                  <td className="py-2 px-3 text-sm">{monthName || "________"}</td>
+                </tr>
+                <tr className="border-b border-gray-300">
+                  <td className="py-2 px-3 font-semibold text-sm">Year:</td>
+                  <td className="py-2 px-3 text-sm">{year}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
           {/* Earnings Table */}
           <div className="space-y-2">
-            <h3 className="font-semibold text-lg">Earnings</h3>
-            <table className="w-full border-collapse">
+            <h3 className="font-semibold text-lg" style={{ color: "#D50260" }}>Earnings</h3>
+            <table className="w-full border-collapse border border-gray-300">
               <thead>
-                <tr className="border-b">
-                  <th className="text-left py-2 font-semibold">Earnings</th>
-                  <th className="text-right py-2 font-semibold">Amount (INR)</th>
+                <tr className="bg-gray-100 dark:bg-gray-800">
+                  <th className="text-left py-2 px-3 font-semibold border border-gray-300">Earnings</th>
+                  <th className="text-right py-2 px-3 font-semibold border border-gray-300">Amount (INR)</th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b">
-                  <td className="py-2">Basic Salary</td>
-                  <td className="text-right">{formatCurrency(basicSalary)}</td>
+                <tr className="border-b border-gray-300">
+                  <td className="py-2 px-3 border border-gray-300">Basic Salary</td>
+                  <td className="text-right py-2 px-3 border border-gray-300">{formatCurrency(basicSalary)}</td>
                 </tr>
-                <tr className="border-b">
-                  <td className="py-2">Allowances</td>
-                  <td className="text-right">{formatCurrency(allowances)}</td>
+                <tr className="border-b border-gray-300">
+                  <td className="py-2 px-3 border border-gray-300">Allowances</td>
+                  <td className="text-right py-2 px-3 border border-gray-300">{formatCurrency(allowances)}</td>
                 </tr>
-                <tr className="border-b">
-                  <td className="py-2">Bonus</td>
-                  <td className="text-right">{formatCurrency(bonus)}</td>
+                <tr className="border-b border-gray-300">
+                  <td className="py-2 px-3 border border-gray-300">Bonus</td>
+                  <td className="text-right py-2 px-3 border border-gray-300">{formatCurrency(bonus)}</td>
                 </tr>
-                <tr className="border-b font-semibold">
-                  <td className="py-2">Gross Salary</td>
-                  <td className="text-right">{formatCurrency(grossSalary)}</td>
+                <tr className="border-b border-gray-300 bg-gray-50 dark:bg-gray-800">
+                  <td className="py-2 px-3 font-semibold border border-gray-300">Gross Salary</td>
+                  <td className="text-right py-2 px-3 font-semibold border border-gray-300">{formatCurrency(grossSalary)}</td>
                 </tr>
               </tbody>
             </table>
@@ -151,30 +176,30 @@ export function SalaryPreview({ formData, employee }: SalaryPreviewProps) {
 
           {/* Deductions Table */}
           <div className="space-y-2">
-            <h3 className="font-semibold text-lg">Deductions</h3>
-            <table className="w-full border-collapse">
+            <h3 className="font-semibold text-lg" style={{ color: "#D50260" }}>Deductions</h3>
+            <table className="w-full border-collapse border border-gray-300">
               <thead>
-                <tr className="border-b">
-                  <th className="text-left py-2 font-semibold">Deductions</th>
-                  <th className="text-right py-2 font-semibold">Amount (INR)</th>
+                <tr className="bg-gray-100 dark:bg-gray-800">
+                  <th className="text-left py-2 px-3 font-semibold border border-gray-300">Deductions</th>
+                  <th className="text-right py-2 px-3 font-semibold border border-gray-300">Amount (INR)</th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b">
-                  <td className="py-2">Advance</td>
-                  <td className="text-right">{formatCurrency(advance)}</td>
+                <tr className="border-b border-gray-300">
+                  <td className="py-2 px-3 border border-gray-300">Advance</td>
+                  <td className="text-right py-2 px-3 border border-gray-300">{formatCurrency(advance)}</td>
                 </tr>
-                <tr className="border-b">
-                  <td className="py-2">Leave / LOP</td>
-                  <td className="text-right">{formatCurrency(leaveLop)}</td>
+                <tr className="border-b border-gray-300">
+                  <td className="py-2 px-3 border border-gray-300">Leave / LOP</td>
+                  <td className="text-right py-2 px-3 border border-gray-300">{formatCurrency(leaveLop)}</td>
                 </tr>
-                <tr className="border-b">
-                  <td className="py-2">Penalty (if any)</td>
-                  <td className="text-right">{formatCurrency(penalty)}</td>
+                <tr className="border-b border-gray-300">
+                  <td className="py-2 px-3 border border-gray-300">Penalty (if any)</td>
+                  <td className="text-right py-2 px-3 border border-gray-300">{formatCurrency(penalty)}</td>
                 </tr>
-                <tr className="border-b font-semibold">
-                  <td className="py-2">Total Deductions</td>
-                  <td className="text-right">{formatCurrency(totalDeductions)}</td>
+                <tr className="border-b border-gray-300 bg-gray-50 dark:bg-gray-800">
+                  <td className="py-2 px-3 font-semibold border border-gray-300">Total Deductions</td>
+                  <td className="text-right py-2 px-3 font-semibold border border-gray-300">{formatCurrency(totalDeductions)}</td>
                 </tr>
               </tbody>
             </table>
@@ -182,18 +207,18 @@ export function SalaryPreview({ formData, employee }: SalaryPreviewProps) {
 
           {/* Net Pay */}
           <div className="space-y-2">
-            <h3 className="font-semibold text-lg">Net Pay</h3>
-            <table className="w-full border-collapse">
+            <h3 className="font-semibold text-lg" style={{ color: "#D50260" }}>Net Pay</h3>
+            <table className="w-full border-collapse border border-gray-300">
               <thead>
-                <tr className="border-b">
-                  <th className="text-left py-2 font-semibold">Net Salary (Payable)</th>
-                  <th className="text-right py-2 font-semibold">Amount (INR)</th>
+                <tr className="bg-gray-100 dark:bg-gray-800">
+                  <th className="text-left py-2 px-3 font-semibold border border-gray-300">Net Salary (Payable)</th>
+                  <th className="text-right py-2 px-3 font-semibold border border-gray-300">Amount (INR)</th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b">
-                  <td className="py-2 font-semibold">Net Salary (Payable)</td>
-                  <td className="text-right font-semibold text-lg">
+                <tr className="border-b border-gray-300">
+                  <td className="py-2 px-3 font-semibold border border-gray-300">Net Salary (Payable)</td>
+                  <td className="text-right py-2 px-3 font-semibold text-lg border border-gray-300" style={{ color: "#D50260" }}>
                     {formatCurrency(netSalary)}
                   </td>
                 </tr>
@@ -202,33 +227,45 @@ export function SalaryPreview({ formData, employee }: SalaryPreviewProps) {
           </div>
 
           {/* Footer */}
-          <div className="space-y-4 pt-4 border-t">
+          <div className="space-y-4 pt-4 border-t border-gray-300">
             <div className="text-sm">
               <span className="font-semibold">Date:</span> {formatDate(formData.date) || "________"}
             </div>
             <div className="flex justify-between items-end mt-8">
               <div>
                 <p className="font-semibold mb-2">Authorized Signatory</p>
-                <div className="border-t w-32"></div>
+                <div className="border-t border-gray-400 w-32 mt-8"></div>
               </div>
-              <div>
+              <div className="text-right">
                 <p className="font-semibold mb-2">Acceptance</p>
                 <p className="text-sm mb-2">
-                  {employee?.name ? `Mr./Ms. ${employee.name}` : "________________"}
+                  {employee?.name ? `Mr. ${employee.name}` : "________________"}
                 </p>
                 <p className="text-sm">(Signature and Date)</p>
               </div>
             </div>
-            <div className="text-xs text-center text-muted-foreground mt-6 pt-4 border-t">
-              <p className="font-semibold">STRIX Development Pvt. Ltd</p>
+            <div className="text-xs text-center text-gray-600 dark:text-gray-400 mt-6 pt-4 border-t border-gray-300 space-y-1">
+              <p className="font-semibold" style={{ color: "#D50260" }}>
+                STRIX Development Pvt. Ltd
+              </p>
               <p>
                 NH-21, Near Union Bank, 1st & 2nd Floor Main bazar Ner - chowk, Teh-Balh, Distt.
                 Mandi, HP 175008-India
               </p>
-              <p>
-                Email: info@strixdevelopment.net | Website: www.strixdevelopment.net
-              </p>
-              <p>Phone: +91 85570-17061, +91 9805997318</p>
+              <div className="flex items-center justify-center gap-4 mt-1">
+                <div className="flex items-center gap-1">
+                  <Mail className="h-3 w-3" style={{ color: "#D50260" }} />
+                  <span>info@strixdevelopment.net</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Globe className="h-3 w-3" style={{ color: "#D50260" }} />
+                  <span>www.strixdevelopment.net</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Phone className="h-3 w-3" style={{ color: "#D50260" }} />
+                  <span>+91 85570-17061, +91 9805997318</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

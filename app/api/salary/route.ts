@@ -1,5 +1,318 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import puppeteer from "puppeteer";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+const SALARY_BUCKET = "salary-slips";
+
+async function generateSalaryPdfHtml(
+  salary: any,
+  employee: any
+): Promise<string> {
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  const monthName =
+    salary.month && salary.month >= 1 && salary.month <= 12
+      ? monthNames[salary.month - 1]
+      : "";
+
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(amount || 0);
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  const basicSalary = salary.basic_salary || 0;
+  const allowances = salary.allowances || 0;
+  const bonus = salary.bonus || 0;
+  const grossSalary = basicSalary + allowances + bonus;
+
+  const advance = salary.advance || 0;
+  const leaveLop = salary.leave_lop || 0;
+  const penalty = salary.penalty || 0;
+  const totalDeductions = advance + leaveLop + penalty;
+  const netSalary = grossSalary - totalDeductions;
+
+  const primaryColor = "#D50260";
+
+  // Simple HTML template that mimics the on-screen preview
+  return `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charSet="utf-8" />
+    <title>Salary Slip</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 12px;
+        color: #111827;
+        padding: 32px;
+      }
+      .card {
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 24px;
+      }
+      .text-center { text-align: center; }
+      .mb-2 { margin-bottom: 8px; }
+      .mb-4 { margin-bottom: 16px; }
+      .mt-4 { margin-top: 16px; }
+      .mt-6 { margin-top: 24px; }
+      .mt-8 { margin-top: 32px; }
+      .pb-4 { padding-bottom: 16px; }
+      .pt-4 { padding-top: 16px; }
+      .border-b { border-bottom: 1px solid #e5e7eb; }
+      .border-t { border-top: 1px solid #e5e7eb; }
+      .font-bold { font-weight: 700; }
+      .font-semibold { font-weight: 600; }
+      .text-sm { font-size: 12px; }
+      .text-xs { font-size: 10px; }
+      .text-lg { font-size: 16px; }
+      .text-primary { color: ${primaryColor}; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { padding: 6px 8px; }
+      th { text-align: left; }
+      .border { border: 1px solid #e5e7eb; }
+      .bg-muted { background-color: #f3f4f6; }
+      .flex { display: flex; }
+      .justify-between { justify-content: space-between; }
+      .items-end { align-items: flex-end; }
+      .text-right { text-align: right; }
+      .footer-row { display: flex; justify-content: center; gap: 16px; margin-top: 4px; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="text-center border-b pb-4">
+        <h1 class="text-lg font-bold mb-2 text-primary">STRIX DEVELOPMENT PVT LTD</h1>
+        <p class="text-sm mb-1">CIN: U72900HP2021PTC008329</p>
+        <p class="text-sm mb-2">GST: 02ABFCS3765D1Z</p>
+        <h2 class="font-semibold text-primary mt-4">Salary Slip</h2>
+      </div>
+
+      <div style="margin-top:16px;">
+        <table>
+          <tbody>
+            <tr class="border-b">
+              <td class="font-semibold text-sm" style="width:33%;">Employee Name:</td>
+              <td class="text-sm">${employee?.name ?? "________________"}</td>
+            </tr>
+            <tr class="border-b">
+              <td class="font-semibold text-sm">Employee ID:</td>
+              <td class="text-sm">${employee?.employee_id ?? "________________"}</td>
+            </tr>
+            <tr class="border-b">
+              <td class="font-semibold text-sm">Designation:</td>
+              <td class="text-sm">${employee?.designation ?? "________________"}</td>
+            </tr>
+            <tr class="border-b">
+              <td class="font-semibold text-sm">Department:</td>
+              <td class="text-sm">${employee?.department ?? "________________"}</td>
+            </tr>
+            <tr class="border-b">
+              <td class="font-semibold text-sm">Month:</td>
+              <td class="text-sm">${monthName || "________"}</td>
+            </tr>
+            <tr class="border-b">
+              <td class="font-semibold text-sm">Year:</td>
+              <td class="text-sm">${salary.year}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:16px;">
+        <h3 class="font-semibold text-primary">Earnings</h3>
+        <table class="border" style="margin-top:4px;">
+          <thead>
+            <tr class="bg-muted">
+              <th class="border font-semibold">Earnings</th>
+              <th class="border font-semibold text-right">Amount (INR)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="border">Basic Salary</td>
+              <td class="border text-right">${formatCurrency(basicSalary)}</td>
+            </tr>
+            <tr>
+              <td class="border">Allowances</td>
+              <td class="border text-right">${formatCurrency(allowances)}</td>
+            </tr>
+            <tr>
+              <td class="border">Bonus</td>
+              <td class="border text-right">${formatCurrency(bonus)}</td>
+            </tr>
+            <tr class="bg-muted">
+              <td class="border font-semibold">Gross Salary</td>
+              <td class="border font-semibold text-right">${formatCurrency(grossSalary)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:16px;">
+        <h3 class="font-semibold text-primary">Deductions</h3>
+        <table class="border" style="margin-top:4px;">
+          <thead>
+            <tr class="bg-muted">
+              <th class="border font-semibold">Deductions</th>
+              <th class="border font-semibold text-right">Amount (INR)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="border">Advance</td>
+              <td class="border text-right">${formatCurrency(advance)}</td>
+            </tr>
+            <tr>
+              <td class="border">Leave / LOP</td>
+              <td class="border text-right">${formatCurrency(leaveLop)}</td>
+            </tr>
+            <tr>
+              <td class="border">Penalty (if any)</td>
+              <td class="border text-right">${formatCurrency(penalty)}</td>
+            </tr>
+            <tr class="bg-muted">
+              <td class="border font-semibold">Total Deductions</td>
+              <td class="border font-semibold text-right">${formatCurrency(totalDeductions)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:16px;">
+        <h3 class="font-semibold text-primary">Net Pay</h3>
+        <table class="border" style="margin-top:4px;">
+          <thead>
+            <tr class="bg-muted">
+              <th class="border font-semibold">Net Salary (Payable)</th>
+              <th class="border font-semibold text-right">Amount (INR)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="border font-semibold">Net Salary (Payable)</td>
+              <td class="border font-semibold text-right text-primary">${formatCurrency(
+                netSalary
+              )}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pt-4 border-t" style="margin-top:16px;">
+        <div class="text-sm">
+          <span class="font-semibold">Date:</span> ${formatDate(salary.date) || "________"}
+        </div>
+        <div class="flex justify-between items-end mt-8">
+          <div>
+            <p class="font-semibold mb-2">Authorized Signatory</p>
+            <div class="border-t" style="width:128px; margin-top:24px;"></div>
+          </div>
+          <div style="text-align:right;">
+            <p class="font-semibold mb-2">Acceptance</p>
+            <p class="text-sm mb-2">${
+              employee?.name ? `Mr. ${employee.name}` : "________________"
+            }</p>
+            <p class="text-sm">(Signature and Date)</p>
+          </div>
+        </div>
+        <div class="text-xs text-center mt-6 pt-4 border-t">
+          <p class="font-semibold text-primary">STRIX Development Pvt. Ltd</p>
+          <p>NH-21, Near Union Bank, 1st & 2nd Floor Main bazar Ner - chowk, Teh-Balh, Distt. Mandi, HP 175008-India</p>
+          <div class="footer-row">
+            <span>Email: info@strixdevelopment.net</span>
+            <span>Website: www.strixdevelopment.net</span>
+            <span>Phone: +91 85570-17061, +91 9805997318</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+`;
+}
+
+async function generateAndStoreSalaryPdf(
+  supabase: SupabaseClient,
+  salary: any
+): Promise<string | null> {
+  // Fetch employee details for this salary
+  const { data: employee, error: employeeError } = await supabase
+    .from("employees")
+    .select("name, employee_id, designation, department")
+    .eq("employee_id", salary.employee_id)
+    .single();
+
+  if (employeeError) {
+    // We don't fail the whole request if employee fetch fails
+    console.error("Error fetching employee for PDF:", employeeError.message);
+  }
+
+  const html = await generateSalaryPdfHtml(salary, employee);
+
+  const browser = await puppeteer.launch({
+    headless: "new",
+  });
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "networkidle0" });
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
+    });
+
+    const fileName = `${salary.employee_id}-${salary.year}-${salary.month}-${salary.rowid}.pdf`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(SALARY_BUCKET)
+      .upload(fileName, pdfBuffer, {
+        contentType: "application/pdf",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error("Error uploading salary PDF:", uploadError.message);
+      return null;
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from(SALARY_BUCKET)
+      .getPublicUrl(fileName);
+
+    return publicUrlData?.publicUrl ?? null;
+  } finally {
+    await browser.close();
+  }
+}
 
 // GET - Fetch all salaries or a single salary by ID
 export async function GET(request: NextRequest) {
@@ -150,6 +463,24 @@ export async function POST(request: NextRequest) {
         { error: error.message },
         { status: 400 }
       );
+    }
+
+    // Generate and upload PDF, then update the salary record with pdf_url
+    try {
+      const pdfUrl = await generateAndStoreSalaryPdf(supabase as SupabaseClient, data);
+      if (pdfUrl) {
+        const { data: updated } = await supabase
+          .from("salaries")
+          .update({ pdf_url: pdfUrl })
+          .eq("rowid", data.rowid)
+          .select()
+          .single();
+
+        return NextResponse.json({ data: updated ?? data }, { status: 201 });
+      }
+    } catch (pdfError: any) {
+      console.error("Error generating salary PDF:", pdfError.message || pdfError);
+      // Fall through and return salary data without pdf_url
     }
 
     return NextResponse.json({ data }, { status: 201 });

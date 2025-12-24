@@ -375,10 +375,10 @@ export function SalaryContent({ isCreateMode: externalCreateMode, onCreateModeCh
     return (
       <div className="h-full flex">
         <div className="flex-1 overflow-auto p-4 md:p-6">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
               {/* Left Side - Form */}
-              <div className="lg:sticky lg:top-4 lg:h-[calc(100vh-8rem)] lg:overflow-y-auto">
+              <div className="lg:sticky lg:top-4 lg:h-[calc(100vh-8rem)]">
                 <SalaryForm
                   employees={employees}
                   onSubmit={handleCreateSalary}
@@ -389,7 +389,7 @@ export function SalaryContent({ isCreateMode: externalCreateMode, onCreateModeCh
                 />
               </div>
               {/* Right Side - Preview */}
-              <div className="lg:sticky lg:top-4 lg:h-[calc(100vh-8rem)] lg:overflow-y-auto">
+              <div className="lg:sticky lg:top-4 lg:h-[calc(100vh-8rem)]">
                 <SalaryPreview
                   formData={formData || {}}
                   employee={selectedEmployee}
