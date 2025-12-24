@@ -40,10 +40,29 @@ export default function Page() {
                 <CardDescription>Check your email to confirm</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  You&apos;ve successfully signed up. Please check your email to
-                  confirm your account before signing in.
-                </p>
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    You&apos;ve successfully signed up! Please check your email inbox (and spam folder) for a confirmation link.
+                  </p>
+                  <div className="bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-800 rounded-lg p-4">
+                    <p className="text-sm text-pink-800 dark:text-pink-200 font-medium mb-2">
+                      Next Steps:
+                    </p>
+                    <ol className="text-xs text-pink-700 dark:text-pink-300 space-y-1 list-decimal list-inside">
+                      <li>Check your email for the confirmation link</li>
+                      <li>Click the link to verify your account</li>
+                      <li>You&apos;ll be automatically redirected to login</li>
+                    </ol>
+                  </div>
+                  <div className="pt-2">
+                    <Link 
+                      href="/auth/login" 
+                      className="text-sm text-pink-600 dark:text-pink-400 hover:underline font-medium"
+                    >
+                      Go to Login →
+                    </Link>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>

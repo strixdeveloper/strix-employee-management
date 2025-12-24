@@ -48,31 +48,26 @@ export function SignUpForm({
         },
       });
       
-      // If user is created but email sending fails, still show success
-      // User can still login if email confirmation is disabled in Supabase settings
       if (error) {
-        // Check if it's an email sending error but user was created
-        if (error.message?.toLowerCase().includes("email") && data?.user) {
-          // User was created, email sending failed - still redirect to success
-          router.push("/auth/sign-up-success");
-          return;
-        }
         throw error;
       }
       
-      // Success - redirect to success page
-      router.push("/auth/sign-up-success");
+      // If email confirmation is disabled, user is automatically logged in
+      // Redirect directly to protected page
+      if (data?.user && data?.session) {
+        // User is logged in (email confirmation disabled)
+        router.push("/protected");
+        router.refresh();
+      } else if (data?.user) {
+        // User created but needs email confirmation
+        router.push("/auth/sign-up-success");
+      } else {
+        // Fallback
+        router.push("/protected");
+      }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "An error occurred";
-      
-      // Provide more helpful error messages
-      if (errorMessage.toLowerCase().includes("email")) {
-        setError(
-          "Email configuration issue. Please check your Supabase email settings or contact support."
-        );
-      } else {
-        setError(errorMessage);
-      }
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
