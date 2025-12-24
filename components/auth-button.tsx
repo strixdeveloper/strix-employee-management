@@ -14,6 +14,9 @@ export async function AuthButton() {
   return user ? (
     <div className="flex items-center gap-4 text-white">
       Hey, {user.email}!
+      <Button asChild size="sm" className="bg-gradient-to-r from-pink-500 to-fuchsia-500 hover:from-pink-600 hover:to-fuchsia-600 text-white shadow-lg shadow-pink-500/50 hover:shadow-xl hover:shadow-pink-500/50 transition-all duration-300">
+        <Link href="/protected">Dashboard</Link>
+      </Button>
       <LogoutButton />
     </div>
   ) : (
