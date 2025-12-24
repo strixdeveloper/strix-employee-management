@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import puppeteer from "puppeteer";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -80,17 +80,23 @@ async function generateSalaryPdfHtml(
     <title>Salary Slip</title>
     <style>
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      body {
+      html, body {
         font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         font-size: 12px;
         color: #111827;
-        padding: 32px;
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        min-height: 100vh;
       }
       .card {
-        border: 2px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 24px;
+        border: none;
+        border-radius: 0;
+        padding: 0;
         position: relative;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
       }
       .watermark {
         position: absolute;
@@ -106,6 +112,12 @@ async function generateSalaryPdfHtml(
       .content {
         position: relative;
         z-index: 10;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+      .footer-section {
+        margin-top: auto;
       }
       table thead tr,
       table tbody tr.bg-muted {
@@ -150,6 +162,7 @@ async function generateSalaryPdfHtml(
       .mb-1 { margin-bottom: 4px; }
       .mb-2 { margin-bottom: 8px; }
       .mb-4 { margin-bottom: 16px; }
+      .block { display: block; }
       .mt-4 { margin-top: 16px; }
       .mt-6 { margin-top: 24px; }
       .mt-8 { margin-top: 32px; }
@@ -228,19 +241,25 @@ async function generateSalaryPdfHtml(
         </table>
       </div>
 
-      <!-- Earnings Table -->
-      <div class="space-y-2">
-        <h3 class="font-semibold text-lg" style="color: ${primaryColor};">Earnings</h3>
+      <!-- Salary Details Section -->
+      <div class="mt-8 space-y-4">
+        <h3 class="font-semibold text-lg" style="color: ${primaryColor};">
+          Salary Details
+        </h3>
+
+        <!-- Combined Salary Table -->
+        <div class="space-y-2">
         <table class="w-full border-collapse border border-gray-300">
           <thead>
             <tr class="bg-muted">
-              <th class="text-left py-2 px-3 font-semibold border border-gray-300">Earnings</th>
+              <th class="text-left py-2 px-3 font-semibold border border-gray-300">Description</th>
               <th class="text-right py-2 px-3 font-semibold border border-gray-300">Amount (INR)</th>
             </tr>
           </thead>
           <tbody>
+            <!-- Earnings -->
             <tr class="border-b border-gray-300">
-              <td class="py-2 px-3 border border-gray-300">Basic Salary</td>
+              <td class="py-2 px-3 border border-gray-300">Current Salary</td>
               <td class="text-right py-2 px-3 border border-gray-300">${formatCurrency(basicSalary)}</td>
             </tr>
             <tr class="border-b border-gray-300">
@@ -255,21 +274,7 @@ async function generateSalaryPdfHtml(
               <td class="py-2 px-3 font-semibold border border-gray-300">Gross Salary</td>
               <td class="text-right py-2 px-3 font-semibold border border-gray-300">${formatCurrency(grossSalary)}</td>
             </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Deductions Table -->
-      <div class="space-y-2">
-        <h3 class="font-semibold text-lg" style="color: ${primaryColor};">Deductions</h3>
-        <table class="w-full border-collapse border border-gray-300">
-          <thead>
-            <tr class="bg-muted">
-              <th class="text-left py-2 px-3 font-semibold border border-gray-300">Deductions</th>
-              <th class="text-right py-2 px-3 font-semibold border border-gray-300">Amount (INR)</th>
-            </tr>
-          </thead>
-          <tbody>
+            <!-- Deductions -->
             <tr class="border-b border-gray-300">
               <td class="py-2 px-3 border border-gray-300">Advance</td>
               <td class="text-right py-2 px-3 border border-gray-300">${formatCurrency(advance)}</td>
@@ -286,21 +291,7 @@ async function generateSalaryPdfHtml(
               <td class="py-2 px-3 font-semibold border border-gray-300">Total Deductions</td>
               <td class="text-right py-2 px-3 font-semibold border border-gray-300">${formatCurrency(totalDeductions)}</td>
             </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Net Pay -->
-      <div class="space-y-2">
-        <h3 class="font-semibold text-lg" style="color: ${primaryColor};">Net Pay</h3>
-        <table class="w-full border-collapse border border-gray-300">
-          <thead>
-            <tr class="bg-muted">
-              <th class="text-left py-2 px-3 font-semibold border border-gray-300">Net Salary (Payable)</th>
-              <th class="text-right py-2 px-3 font-semibold border border-gray-300">Amount (INR)</th>
-            </tr>
-          </thead>
-          <tbody>
+            <!-- Net Pay -->
             <tr class="border-b border-gray-300">
               <td class="py-2 px-3 font-semibold border border-gray-300">Net Salary (Payable)</td>
               <td class="text-right py-2 px-3 font-semibold text-lg border border-gray-300" style="color: ${primaryColor};">
@@ -309,6 +300,7 @@ async function generateSalaryPdfHtml(
             </tr>
           </tbody>
         </table>
+        </div>
       </div>
 
       <!-- Footer -->
@@ -330,10 +322,13 @@ async function generateSalaryPdfHtml(
           </div>
         </div>
 
+        <!-- Pink line above footer -->
+        <div class="mt-6 mb-4 h-1 w-full" style="background-color: ${primaryColor};"></div>
+
         <!-- Bottom company/contact bar -->
-        <div class="mt-6 pt-4 border-t-4" style="border-color: ${primaryColor};">
+        <div class="pt-4 border-t-4 footer-section" style="border-color: ${primaryColor};">
           <div class="flex flex-row justify-between gap-6 text-xs text-gray-700">
-            <!-- Left: company name + address -->
+            <!-- Left: Company name + address -->
             <div class="w-1-2 space-y-1">
               <p class="font-semibold" style="color: ${primaryColor};">
                 STRIX Development Pvt. Ltd
@@ -344,34 +339,28 @@ async function generateSalaryPdfHtml(
               </p>
             </div>
 
-            <!-- Right: contact info with icons (using SVG icons) -->
-            <div class="w-1-2 flex flex-col gap-2">
-              <div class="flex items-center gap-2">
-                <svg class="icon h-4" style="color: ${primaryColor};" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- Right: Contact info with icons (block format, right aligned) -->
+            <div class="w-1-2 space-y-2 text-right">
+              <div>
+                <svg class="icon h-4" style="color: ${primaryColor}; display: inline-block; vertical-align: middle; margin-right: 8px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                 </svg>
-                <p>
-                  <span class="font-semibold">Email:</span>
-                  <span> info@strixdevelopment.net</span>
-                </p>
+                <span class="font-semibold">Email:</span>
+                <span> info@strixdevelopment.net</span>
               </div>
-              <div class="flex items-center gap-2">
-                <svg class="icon h-4" style="color: ${primaryColor};" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div>
+                <svg class="icon h-4" style="color: ${primaryColor}; display: inline-block; vertical-align: middle; margin-right: 8px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
                 </svg>
-                <p>
-                  <span class="font-semibold">Website:</span>
-                  <span> www.strixdevelopment.net</span>
-                </p>
+                <span class="font-semibold">Website:</span>
+                <span> www.strixdevelopment.net</span>
               </div>
-              <div class="flex items-center gap-2">
-                <svg class="icon h-4" style="color: ${primaryColor};" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div>
+                <svg class="icon h-4" style="color: ${primaryColor}; display: inline-block; vertical-align: middle; margin-right: 8px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
                 </svg>
-                <p>
-                  <span class="font-semibold">Phone:</span>
-                  <span> +91 85570-17061, +91 9805997318</span>
-                </p>
+                <span class="font-semibold">Phone:</span>
+                <span> +91 85570-17061, +91 9805997318</span>
               </div>
             </div>
           </div>
@@ -386,7 +375,8 @@ async function generateSalaryPdfHtml(
 
 async function generateAndStoreSalaryPdf(
   supabase: SupabaseClient,
-  salary: any
+  salary: any,
+  isUpdate: boolean = false
 ): Promise<string | null> {
   // Fetch employee details for this salary
   const { data: employee, error: employeeError } = await supabase
@@ -411,12 +401,19 @@ async function generateAndStoreSalaryPdf(
     const pdfBuffer = await page.pdf({
       format: "A4",
       printBackground: true,
-      margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
+      margin: { top: "10mm", right: "5mm", bottom: "10mm", left: "5mm" },
     });
 
-    const fileName = `${salary.employee_id}-${salary.year}-${salary.month}-${salary.rowid}.pdf`;
+    // Generate filename with -updated suffix if this is an update
+    const baseFileName = `${salary.employee_id}-${salary.year}-${salary.month}-${salary.rowid}`;
+    const fileName = isUpdate 
+      ? `${baseFileName}-updated.pdf`
+      : `${baseFileName}.pdf`;
 
-    const { error: uploadError } = await supabase.storage
+    // Use service role client for storage upload to bypass RLS
+    const serviceRoleClient = createServiceRoleClient();
+
+    const { error: uploadError } = await serviceRoleClient.storage
       .from(SALARY_BUCKET)
       .upload(fileName, pdfBuffer, {
         contentType: "application/pdf",
@@ -428,7 +425,7 @@ async function generateAndStoreSalaryPdf(
       return null;
     }
 
-    const { data: publicUrlData } = supabase.storage
+    const { data: publicUrlData } = serviceRoleClient.storage
       .from(SALARY_BUCKET)
       .getPublicUrl(fileName);
 
@@ -701,6 +698,24 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Generate and upload new PDF with -updated suffix, then update the salary record with new pdf_url
+    try {
+      const pdfUrl = await generateAndStoreSalaryPdf(supabase as SupabaseClient, data, true);
+      if (pdfUrl) {
+        const { data: updated } = await supabase
+          .from("salaries")
+          .update({ pdf_url: pdfUrl })
+          .eq("rowid", data.rowid)
+          .select()
+          .single();
+
+        return NextResponse.json({ data: updated ?? data }, { status: 200 });
+      }
+    } catch (pdfError: any) {
+      console.error("Error generating salary PDF:", pdfError.message || pdfError);
+      // Fall through and return salary data without updated pdf_url
+    }
+
     return NextResponse.json({ data }, { status: 200 });
   } catch (error) {
     return NextResponse.json(
@@ -744,13 +759,27 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Optionally delete PDF from storage if exists
+    // Optionally delete PDF from storage if exists (both original and updated versions)
     if (salaryData?.pdf_url) {
       const fileName = salaryData.pdf_url.split("/").pop();
       if (fileName) {
-        await supabase.storage
+        // Use service role client for storage deletion to bypass RLS
+        const serviceRoleClient = createServiceRoleClient();
+        const filesToDelete = [fileName];
+        
+        // Also try to delete the original file if this was an updated version
+        if (fileName.includes("-updated.pdf")) {
+          const originalFileName = fileName.replace("-updated.pdf", ".pdf");
+          filesToDelete.push(originalFileName);
+        } else {
+          // If deleting original, also try to delete updated version
+          const updatedFileName = fileName.replace(".pdf", "-updated.pdf");
+          filesToDelete.push(updatedFileName);
+        }
+        
+        await serviceRoleClient.storage
           .from("salary-slips")
-          .remove([fileName]);
+          .remove(filesToDelete);
       }
     }
 

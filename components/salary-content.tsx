@@ -89,6 +89,7 @@ export function SalaryContent({ isCreateMode: externalCreateMode, onCreateModeCh
   const [formData, setFormData] = useState<any>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingSalary, setEditingSalary] = useState<Salary | null>(null);
   const itemsPerPage = 20;
 
   // Simple toast implementation
@@ -190,26 +191,59 @@ export function SalaryContent({ isCreateMode: externalCreateMode, onCreateModeCh
   const handleCreateSalary = async (data: any) => {
     try {
       setIsSubmitting(true);
-      const response = await fetch("/api/salary", {
-        method: "POST",
+      const url = editingSalary 
+        ? `/api/salary?rowid=${editingSalary.rowid}`
+        : "/api/salary";
+      const method = editingSalary ? "PUT" : "POST";
+      
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(editingSalary ? { ...data, rowid: editingSalary.rowid } : data),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to create salary record");
+        throw new Error(error.error || `Failed to ${editingSalary ? "update" : "create"} salary record`);
       }
 
-      showToast("Salary record created successfully");
+      showToast(`Salary record ${editingSalary ? "updated" : "created"} successfully`);
       setIsCreateMode(false);
       setFormData(null);
       setSelectedEmployee(null);
+      setEditingSalary(null);
       fetchSalaries();
     } catch (error: any) {
       showToast(error.message, "error");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleEdit = (salary: Salary) => {
+    // Find the employee for this salary
+    const employee = employees.find(emp => emp.employee_id === salary.employee_id);
+    
+    // Pre-fill form data
+    const editFormData = {
+      employee_id: salary.employee_id,
+      month: salary.month,
+      year: salary.year,
+      date: salary.date,
+      basic_salary: salary.basic_salary,
+      allowances: salary.allowances,
+      bonus: salary.bonus,
+      advance: salary.advance,
+      leave_lop: salary.leave_lop,
+      penalty: salary.penalty || 0,
+    };
+    
+    setEditingSalary(salary);
+    setFormData(editFormData);
+    setSelectedEmployee(employee || null);
+    setIsCreateMode(true);
+    if (onCreateModeChange) {
+      onCreateModeChange(true);
     }
   };
 
@@ -380,6 +414,7 @@ export function SalaryContent({ isCreateMode: externalCreateMode, onCreateModeCh
               {/* Left Side - Form */}
               <div className="lg:sticky lg:top-4 lg:h-[calc(100vh-8rem)]">
                 <SalaryForm
+                  key={editingSalary?.rowid || "create"}
                   employees={employees}
                   onSubmit={handleCreateSalary}
                   onCancel={handleBackToTable}
@@ -439,6 +474,17 @@ export function SalaryContent({ isCreateMode: externalCreateMode, onCreateModeCh
                 >
                   <Download className="mr-2 h-4 w-4" />
                   Download
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const salary = selectedSalaries[0];
+                    if (salary) handleEdit(salary);
+                  }}
+                  className="bg-gradient-to-r from-pink-500 to-fuchsia-500 text-white hover:from-pink-600 hover:to-fuchsia-600 border-0"
+                >
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit
                 </Button>
                 <Button
                   variant="outline"
@@ -547,10 +593,7 @@ export function SalaryContent({ isCreateMode: externalCreateMode, onCreateModeCh
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => {
-                            // TODO: Open edit dialog
-                            showToast("Edit functionality coming soon");
-                          }}
+                          onClick={() => handleEdit(salary)}
                           title="Edit"
                         >
                           <Pencil className="h-4 w-4" />
@@ -635,9 +678,7 @@ export function SalaryContent({ isCreateMode: externalCreateMode, onCreateModeCh
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => {
-                          showToast("Edit functionality coming soon");
-                        }}
+                        onClick={() => handleEdit(salary)}
                         title="Edit"
                       >
                         <Pencil className="h-4 w-4" />

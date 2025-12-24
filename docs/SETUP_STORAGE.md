@@ -80,7 +80,16 @@ Make sure you have these in your `.env.local`:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 ```
+
+**Important:** The `SUPABASE_SERVICE_ROLE_KEY` is required for server-side storage operations (uploading PDFs). This key bypasses RLS policies and should NEVER be exposed to the client.
+
+To find your service role key:
+1. Go to your Supabase project dashboard
+2. Navigate to **Settings** > **API**
+3. Find **service_role** key (keep it secret!)
+4. Copy it to your `.env.local` file
 
 ## Usage in Code
 

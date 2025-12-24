@@ -166,19 +166,25 @@ export function SalaryPreview({ formData, employee }: SalaryPreviewProps) {
             </table>
           </div>
 
-          {/* Earnings Table */}
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg" style={{ color: "#D50260" }}>Earnings</h3>
+          {/* Salary Details Section */}
+          <div className="mt-8 space-y-4">
+            <h3 className="font-semibold text-lg" style={{ color: "#D50260" }}>
+              Salary Details
+            </h3>
+
+            {/* Combined Salary Table */}
+            <div className="space-y-2">
             <table className="w-full border-collapse border border-gray-300">
               <thead>
                 <tr className="bg-gray-100/70 dark:bg-gray-800/70">
-                  <th className="text-left py-2 px-3 font-semibold border border-gray-300">Earnings</th>
+                  <th className="text-left py-2 px-3 font-semibold border border-gray-300">Description</th>
                   <th className="text-right py-2 px-3 font-semibold border border-gray-300">Amount (INR)</th>
                 </tr>
               </thead>
               <tbody>
+                {/* Earnings */}
                 <tr className="border-b border-gray-300">
-                  <td className="py-2 px-3 border border-gray-300">Basic Salary</td>
+                  <td className="py-2 px-3 border border-gray-300">Current Salary</td>
                   <td className="text-right py-2 px-3 border border-gray-300">{formatCurrency(basicSalary)}</td>
                 </tr>
                 <tr className="border-b border-gray-300">
@@ -193,21 +199,7 @@ export function SalaryPreview({ formData, employee }: SalaryPreviewProps) {
                   <td className="py-2 px-3 font-semibold border border-gray-300">Gross Salary</td>
                   <td className="text-right py-2 px-3 font-semibold border border-gray-300">{formatCurrency(grossSalary)}</td>
                 </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Deductions Table */}
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg" style={{ color: "#D50260" }}>Deductions</h3>
-            <table className="w-full border-collapse border border-gray-300">
-              <thead>
-                <tr className="bg-gray-100/70 dark:bg-gray-800/70">
-                  <th className="text-left py-2 px-3 font-semibold border border-gray-300">Deductions</th>
-                  <th className="text-right py-2 px-3 font-semibold border border-gray-300">Amount (INR)</th>
-                </tr>
-              </thead>
-              <tbody>
+                {/* Deductions */}
                 <tr className="border-b border-gray-300">
                   <td className="py-2 px-3 border border-gray-300">Advance</td>
                   <td className="text-right py-2 px-3 border border-gray-300">{formatCurrency(advance)}</td>
@@ -224,21 +216,7 @@ export function SalaryPreview({ formData, employee }: SalaryPreviewProps) {
                   <td className="py-2 px-3 font-semibold border border-gray-300">Total Deductions</td>
                   <td className="text-right py-2 px-3 font-semibold border border-gray-300">{formatCurrency(totalDeductions)}</td>
                 </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Net Pay */}
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg" style={{ color: "#D50260" }}>Net Pay</h3>
-            <table className="w-full border-collapse border border-gray-300">
-              <thead>
-                <tr className="bg-gray-100/70 dark:bg-gray-800/70">
-                  <th className="text-left py-2 px-3 font-semibold border border-gray-300">Net Salary (Payable)</th>
-                  <th className="text-right py-2 px-3 font-semibold border border-gray-300">Amount (INR)</th>
-                </tr>
-              </thead>
-              <tbody>
+                {/* Net Pay */}
                 <tr className="border-b border-gray-300">
                   <td className="py-2 px-3 font-semibold border border-gray-300">Net Salary (Payable)</td>
                   <td className="text-right py-2 px-3 font-semibold text-lg border border-gray-300" style={{ color: "#D50260" }}>
@@ -247,6 +225,7 @@ export function SalaryPreview({ formData, employee }: SalaryPreviewProps) {
                 </tr>
               </tbody>
             </table>
+            </div>
           </div>
 
           {/* Footer */}
@@ -268,11 +247,14 @@ export function SalaryPreview({ formData, employee }: SalaryPreviewProps) {
               </div>
             </div>
 
+            {/* Pink line above footer */}
+            <div className="mt-6 mb-4 h-1 w-full" style={{ backgroundColor: "#D50260" }}></div>
+
             {/* Bottom company/contact bar */}
-            <div className="mt-6 pt-4 border-t-4" style={{ borderColor: "#D50260" }}>
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 text-xs text-gray-700 dark:text-gray-300">
+            <div className="pt-4" style={{ borderTop: "none" }}>
+              <div className="flex flex-row justify-between gap-6 text-xs text-gray-700 dark:text-gray-300">
                 {/* Left: company name + address */}
-                <div className="md:w-1/2 space-y-1">
+                <div className="w-1/2 space-y-1">
                   <p className="font-semibold" style={{ color: "#D50260" }}>
                     STRIX Development Pvt. Ltd
                   </p>
@@ -282,28 +264,22 @@ export function SalaryPreview({ formData, employee }: SalaryPreviewProps) {
                   </p>
                 </div>
 
-                {/* Right: contact info with icons */}
-                <div className="md:w-1/2 flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4" style={{ color: "#D50260" }} />
-                    <p>
-                      <span className="font-semibold">Email:</span>{" "}
-                      <span>info@strixdevelopment.net</span>
-                    </p>
+                {/* Right: contact info with icons (block format, right aligned) */}
+                <div className="w-1/2 space-y-2 text-right">
+                  <div>
+                    <Mail className="h-4 w-4 inline-block align-middle mr-2" style={{ color: "#D50260" }} />
+                    <span className="font-semibold">Email:</span>{" "}
+                    <span>info@strixdevelopment.net</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Globe className="h-4 w-4" style={{ color: "#D50260" }} />
-                    <p>
-                      <span className="font-semibold">Website:</span>{" "}
-                      <span>www.strixdevelopment.net</span>
-                    </p>
+                  <div>
+                    <Globe className="h-4 w-4 inline-block align-middle mr-2" style={{ color: "#D50260" }} />
+                    <span className="font-semibold">Website:</span>{" "}
+                    <span>www.strixdevelopment.net</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4" style={{ color: "#D50260" }} />
-                    <p>
-                      <span className="font-semibold">Phone:</span>{" "}
-                      <span>+91 85570-17061, +91 9805997318</span>
-                    </p>
+                  <div>
+                    <Phone className="h-4 w-4 inline-block align-middle mr-2" style={{ color: "#D50260" }} />
+                    <span className="font-semibold">Phone:</span>{" "}
+                    <span>+91 85570-17061, +91 9805997318</span>
                   </div>
                 </div>
               </div>

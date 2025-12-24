@@ -28,7 +28,7 @@ const salarySchema = z.object({
   month: z.number().min(1).max(12),
   year: z.number().min(2020).max(2100),
   date: z.string().min(1, "Date is required"),
-  basic_salary: z.number().min(0, "Basic salary must be 0 or greater"),
+  basic_salary: z.number().min(0, "Current salary must be 0 or greater"),
   allowances: z.number().min(0, "Allowances must be 0 or greater"),
   bonus: z.number().min(0, "Bonus must be 0 or greater"),
   advance: z.number().min(0, "Advance must be 0 or greater"),
@@ -51,7 +51,7 @@ interface SalaryFormProps {
   onSubmit: (data: SalaryFormValues) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
-  formData?: SalaryFormValues;
+  formData?: SalaryFormValues & { rowid?: number };
   onFormChange?: (data: SalaryFormValues) => void;
 }
 
@@ -97,6 +97,13 @@ export function SalaryForm({
       penalty: 0,
     },
   });
+
+  // Reset form when formData changes (for edit mode)
+  useEffect(() => {
+    if (formData) {
+      form.reset(formData);
+    }
+  }, [formData, form]);
 
   // Watch form changes for real-time preview
   const watchedValues = form.watch();
@@ -237,7 +244,7 @@ export function SalaryForm({
                   name="basic_salary"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Basic Salary</FormLabel>
+                      <FormLabel>Current Salary</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -373,7 +380,7 @@ export function SalaryForm({
                 disabled={isLoading}
                 className="flex-1 bg-gradient-to-r from-pink-500 to-fuchsia-500 text-white hover:from-pink-600 hover:to-fuchsia-600"
               >
-                {isLoading ? "Creating..." : "Create Salary Slip"}
+                {isLoading ? (formData?.rowid ? "Updating..." : "Creating...") : (formData?.rowid ? "Update Salary Slip" : "Create Salary Slip")}
               </Button>
             </div>
           </form>
