@@ -1,18 +1,13 @@
 import { Suspense } from "react";
 import { DashboardContent } from "@/components/dashboard-content";
+import { ProtectedHeader } from "@/components/protected-header";
 
 export default function ProtectedPage() {
   return (
     <div className="flex flex-col h-full w-full">
       {/* Header */}
-      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center px-8">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-600 via-fuchsia-600 to-pink-600 bg-clip-text text-transparent">
-              Dashboard
-            </h1>
-          </div>
-        </div>
+      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-30">
+        <ProtectedHeader />
       </div>
 
       {/* Main Content */}

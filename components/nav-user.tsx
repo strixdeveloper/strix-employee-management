@@ -14,9 +14,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useSidebar } from "@/components/sidebar-provider";
+import { cn } from "@/lib/utils";
 
 export function NavUser() {
   const router = useRouter();
+  const { isCollapsed } = useSidebar();
   const [user, setUser] = useState<{ email?: string; name?: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -45,12 +48,14 @@ export function NavUser() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 px-2 py-2">
+      <div className={cn("flex items-center", isCollapsed ? "justify-center" : "gap-2 px-2")}>
         <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
-        <div className="flex-1 space-y-1">
-          <div className="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-          <div className="h-2 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-        </div>
+        {!isCollapsed && (
+          <div className="flex-1 space-y-1">
+            <div className="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+            <div className="h-2 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+          </div>
+        )}
       </div>
     );
   }
@@ -61,6 +66,44 @@ export function NavUser() {
     .join("")
     .toUpperCase()
     .slice(0, 2) || "U";
+
+  if (isCollapsed) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger className="w-full">
+          <div className="flex items-center justify-center rounded-lg p-2 hover:bg-accent transition-colors cursor-pointer">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src="" alt={user?.name || "User"} />
+              <AvatarFallback className="bg-gradient-to-r from-pink-500 to-fuchsia-500 text-white text-xs">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" side="right" className="w-56">
+          <DropdownMenuLabel>
+            <div className="flex flex-col space-y-1">
+              <p className="text-sm font-medium leading-none">{user?.name || "User"}</p>
+              <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+            </div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="cursor-pointer">
+            <User className="mr-2 h-4 w-4" />
+            <span>Profile</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
+            onClick={handleLogout}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>Log out</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
 
   return (
     <DropdownMenu>

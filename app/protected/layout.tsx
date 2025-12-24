@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AuthCheck } from "@/components/auth-check";
+import { SidebarProvider } from "@/components/sidebar-provider";
 
 export default function ProtectedLayout({
   children,
@@ -19,14 +20,16 @@ export default function ProtectedLayout({
       </div>
     }>
       <AuthCheck>
-        <div className="flex h-screen w-full overflow-hidden">
-          <AppSidebar />
-          <main className="flex-1 overflow-auto">
-            <div className="h-full w-full">
-              {children}
-            </div>
-          </main>
-        </div>
+        <SidebarProvider>
+          <div className="flex h-screen w-full overflow-hidden">
+            <AppSidebar />
+            <main className="flex-1 overflow-auto lg:ml-0">
+              <div className="h-full w-full">
+                {children}
+              </div>
+            </main>
+          </div>
+        </SidebarProvider>
       </AuthCheck>
     </Suspense>
   );
