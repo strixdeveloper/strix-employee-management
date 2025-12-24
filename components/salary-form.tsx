@@ -155,21 +155,23 @@ export function SalaryForm({
               )}
             />
 
-            {/* Date, Month and Year */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Date</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {/* Date */}
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Date</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Month and Year */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="month"
@@ -337,7 +339,7 @@ export function SalaryForm({
                   name="penalty"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Penalty (If any)</FormLabel>
+                      <FormLabel>Penalty</FormLabel>
                       <FormControl>
                         <Input
                           type="number"

@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import puppeteer from "puppeteer";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import fs from "fs";
+import path from "path";
 
 const SALARY_BUCKET = "salary-slips";
 
@@ -59,6 +61,16 @@ async function generateSalaryPdfHtml(
 
   const primaryColor = "#D50260";
 
+  // Read logo and convert to base64 for watermark
+  let logoBase64 = "";
+  try {
+    const logoPath = path.join(process.cwd(), "app", "Strix-logo-1.png");
+    const logoBuffer = fs.readFileSync(logoPath);
+    logoBase64 = `data:image/png;base64,${logoBuffer.toString("base64")}`;
+  } catch (error) {
+    console.error("Error reading logo file:", error);
+  }
+
   // Simple HTML template that mimics the on-screen preview
   return `
 <!DOCTYPE html>
@@ -78,6 +90,26 @@ async function generateSalaryPdfHtml(
         border: 2px solid #e5e7eb;
         border-radius: 12px;
         padding: 24px;
+        position: relative;
+      }
+      .watermark {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-45deg);
+        opacity: 0.1;
+        z-index: 5;
+        pointer-events: none;
+        width: 600px;
+        height: auto;
+      }
+      .content {
+        position: relative;
+        z-index: 10;
+      }
+      table thead tr,
+      table tbody tr.bg-muted {
+        background-color: rgba(243, 244, 246, 0.7) !important;
       }
       .text-center { text-align: center; }
       .mb-2 { margin-bottom: 8px; }
@@ -109,6 +141,8 @@ async function generateSalaryPdfHtml(
   </head>
   <body>
     <div class="card">
+      ${logoBase64 ? `<img src="${logoBase64}" alt="Watermark" class="watermark" />` : ""}
+      <div class="content">
       <div class="text-center border-b pb-4">
         <h1 class="text-lg font-bold mb-2 text-primary">STRIX DEVELOPMENT PVT LTD</h1>
         <p class="text-sm mb-1">CIN: U72900HP2021PTC008329</p>
@@ -254,6 +288,7 @@ async function generateSalaryPdfHtml(
           </div>
         </div>
       </div>
+      </div>
     </div>
   </body>
 </html>
@@ -279,7 +314,7 @@ async function generateAndStoreSalaryPdf(
   const html = await generateSalaryPdfHtml(salary, employee);
 
   const browser = await puppeteer.launch({
-    headless: "new",
+    headless: true,
   });
   try {
     const page = await browser.newPage();

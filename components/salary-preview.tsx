@@ -85,30 +85,53 @@ export function SalaryPreview({ formData, employee }: SalaryPreviewProps) {
   return (
     <Card className="h-full flex flex-col">
       <CardContent className="p-6 flex-1 overflow-y-auto custom-scrollbar">
-        <div className="bg-white dark:bg-gray-900 rounded-lg border-2 border-gray-200 dark:border-gray-700 p-8 space-y-6 min-h-[800px]">
+        <div className="bg-white dark:bg-gray-900 rounded-lg border-2 border-gray-200 dark:border-gray-700 p-8 space-y-6 min-h-[800px] relative">
+          {/* Background Watermark */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 5, opacity: 0.1 }}>
+            <Image
+              src={strixLogo}
+              alt="STRIX Watermark"
+              width={600}
+              height={300}
+              className="h-auto w-auto"
+              style={{ 
+                width: "600px", 
+                height: "auto",
+                transform: "rotate(-45deg)"
+              }}
+            />
+          </div>
+          {/* Content */}
+          <div className="relative space-y-6" style={{ zIndex: 10 }}>
           {/* Company Header with Logo */}
-          <div className="text-center border-b border-[#D50260] pb-4">
-            <div className="flex items-center justify-center mb-4">
-              <Image
-                src={strixLogo}
-                alt="STRIX Logo"
-                width={120}
-                height={40}
-                className="h-auto"
-              />
+          <div className="pb-4">
+            <div className="flex items-center justify-between mb-4">
+              {/* Logo on Left */}
+              <div className="flex items-center">
+                <Image
+                  src={strixLogo}
+                  alt="STRIX Logo"
+                  width={180}
+                  height={60}
+                  className="h-auto"
+                />
+              </div>
+              {/* CIN and GST on Right */}
+              <div className="text-right space-y-1">
+                <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+                  CIN : U72900HP2021PTC008329
+                </p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+                  GST : 02ABFCS3765D1Z
+                </p>
+              </div>
             </div>
-            <h1 className="text-2xl font-bold mb-2" style={{ color: "#D50260" }}>
-              STRIX DEVELOPMENT PVT LTD
-            </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              CIN: U72900HP2021PTC008329
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              GST: 02ABFCS3765D1Z
-            </p>
-            <h2 className="text-xl font-semibold mt-4" style={{ color: "#D50260" }}>
-              Salary Slip
-            </h2>
+            <div className="text-center mt-4">
+              <div className="mb-2 h-1 w-full" style={{ backgroundColor: "#D50260" }}></div>
+              <h2 className="text-xl font-semibold" style={{ color: "#000000" }}>
+                Salary Slip
+              </h2>
+            </div>
           </div>
 
           {/* Employee Details Table */}
@@ -148,7 +171,7 @@ export function SalaryPreview({ formData, employee }: SalaryPreviewProps) {
             <h3 className="font-semibold text-lg" style={{ color: "#D50260" }}>Earnings</h3>
             <table className="w-full border-collapse border border-gray-300">
               <thead>
-                <tr className="bg-gray-100 dark:bg-gray-800">
+                <tr className="bg-gray-100/70 dark:bg-gray-800/70">
                   <th className="text-left py-2 px-3 font-semibold border border-gray-300">Earnings</th>
                   <th className="text-right py-2 px-3 font-semibold border border-gray-300">Amount (INR)</th>
                 </tr>
@@ -166,7 +189,7 @@ export function SalaryPreview({ formData, employee }: SalaryPreviewProps) {
                   <td className="py-2 px-3 border border-gray-300">Bonus</td>
                   <td className="text-right py-2 px-3 border border-gray-300">{formatCurrency(bonus)}</td>
                 </tr>
-                <tr className="border-b border-gray-300 bg-gray-50 dark:bg-gray-800">
+                <tr className="border-b border-gray-300 bg-gray-50/70 dark:bg-gray-800/70">
                   <td className="py-2 px-3 font-semibold border border-gray-300">Gross Salary</td>
                   <td className="text-right py-2 px-3 font-semibold border border-gray-300">{formatCurrency(grossSalary)}</td>
                 </tr>
@@ -179,7 +202,7 @@ export function SalaryPreview({ formData, employee }: SalaryPreviewProps) {
             <h3 className="font-semibold text-lg" style={{ color: "#D50260" }}>Deductions</h3>
             <table className="w-full border-collapse border border-gray-300">
               <thead>
-                <tr className="bg-gray-100 dark:bg-gray-800">
+                <tr className="bg-gray-100/70 dark:bg-gray-800/70">
                   <th className="text-left py-2 px-3 font-semibold border border-gray-300">Deductions</th>
                   <th className="text-right py-2 px-3 font-semibold border border-gray-300">Amount (INR)</th>
                 </tr>
@@ -197,7 +220,7 @@ export function SalaryPreview({ formData, employee }: SalaryPreviewProps) {
                   <td className="py-2 px-3 border border-gray-300">Penalty (if any)</td>
                   <td className="text-right py-2 px-3 border border-gray-300">{formatCurrency(penalty)}</td>
                 </tr>
-                <tr className="border-b border-gray-300 bg-gray-50 dark:bg-gray-800">
+                <tr className="border-b border-gray-300 bg-gray-50/70 dark:bg-gray-800/70">
                   <td className="py-2 px-3 font-semibold border border-gray-300">Total Deductions</td>
                   <td className="text-right py-2 px-3 font-semibold border border-gray-300">{formatCurrency(totalDeductions)}</td>
                 </tr>
@@ -210,7 +233,7 @@ export function SalaryPreview({ formData, employee }: SalaryPreviewProps) {
             <h3 className="font-semibold text-lg" style={{ color: "#D50260" }}>Net Pay</h3>
             <table className="w-full border-collapse border border-gray-300">
               <thead>
-                <tr className="bg-gray-100 dark:bg-gray-800">
+                <tr className="bg-gray-100/70 dark:bg-gray-800/70">
                   <th className="text-left py-2 px-3 font-semibold border border-gray-300">Net Salary (Payable)</th>
                   <th className="text-right py-2 px-3 font-semibold border border-gray-300">Amount (INR)</th>
                 </tr>
@@ -244,29 +267,48 @@ export function SalaryPreview({ formData, employee }: SalaryPreviewProps) {
                 <p className="text-sm">(Signature and Date)</p>
               </div>
             </div>
-            <div className="text-xs text-center text-gray-600 dark:text-gray-400 mt-6 pt-4 border-t border-gray-300 space-y-1">
-              <p className="font-semibold" style={{ color: "#D50260" }}>
-                STRIX Development Pvt. Ltd
-              </p>
-              <p>
-                NH-21, Near Union Bank, 1st & 2nd Floor Main bazar Ner - chowk, Teh-Balh, Distt.
-                Mandi, HP 175008-India
-              </p>
-              <div className="flex items-center justify-center gap-4 mt-1">
-                <div className="flex items-center gap-1">
-                  <Mail className="h-3 w-3" style={{ color: "#D50260" }} />
-                  <span>info@strixdevelopment.net</span>
+
+            {/* Bottom company/contact bar */}
+            <div className="mt-6 pt-4 border-t-4" style={{ borderColor: "#D50260" }}>
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 text-xs text-gray-700 dark:text-gray-300">
+                {/* Left: company name + address */}
+                <div className="md:w-1/2 space-y-1">
+                  <p className="font-semibold" style={{ color: "#D50260" }}>
+                    STRIX Development Pvt. Ltd
+                  </p>
+                  <p>
+                    NH-21, Near Union Bank, 1st &amp; 2nd Floor Main bazar Ner - chowk, Teh-Balh,
+                    Distt. Mandi, HP 175008-India
+                  </p>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Globe className="h-3 w-3" style={{ color: "#D50260" }} />
-                  <span>www.strixdevelopment.net</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Phone className="h-3 w-3" style={{ color: "#D50260" }} />
-                  <span>+91 85570-17061, +91 9805997318</span>
+
+                {/* Right: contact info with icons */}
+                <div className="md:w-1/2 flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4" style={{ color: "#D50260" }} />
+                    <p>
+                      <span className="font-semibold">Email:</span>{" "}
+                      <span>info@strixdevelopment.net</span>
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4" style={{ color: "#D50260" }} />
+                    <p>
+                      <span className="font-semibold">Website:</span>{" "}
+                      <span>www.strixdevelopment.net</span>
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4" style={{ color: "#D50260" }} />
+                    <p>
+                      <span className="font-semibold">Phone:</span>{" "}
+                      <span>+91 85570-17061, +91 9805997318</span>
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
+          </div>
           </div>
         </div>
       </CardContent>

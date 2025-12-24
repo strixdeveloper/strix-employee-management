@@ -220,7 +220,7 @@ export function EmployeesContent() {
 
   useEffect(() => {
     if (selectAllCheckboxRef.current) {
-      const checkbox = selectAllCheckboxRef.current as unknown as HTMLButtonElement;
+      const checkbox = selectAllCheckboxRef.current as unknown as HTMLInputElement;
       if (checkbox) {
         checkbox.indeterminate = isIndeterminate;
       }
