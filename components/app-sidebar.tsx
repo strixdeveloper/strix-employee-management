@@ -70,7 +70,7 @@ export function AppSidebar() {
             )}
           >
             {isCollapsed ? (
-              <div className="h-10 w-10 rounded-lg bg-gradient-to-r from-pink-500 to-fuchsia-500 flex items-center justify-center">
+              <div className="h-10 w-10 rounded bg-gradient-to-r from-pink-500 to-fuchsia-500 flex items-center justify-center flex-shrink-0">
                 <span className="text-white font-bold text-xl">S</span>
               </div>
             ) : (
