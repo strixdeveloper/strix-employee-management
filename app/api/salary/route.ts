@@ -137,140 +137,191 @@ async function generateSalaryPdfHtml(
       .items-end { align-items: flex-end; }
       .text-right { text-align: right; }
       .footer-row { display: flex; justify-content: center; gap: 16px; margin-top: 4px; }
+      .flex-row { display: flex; }
+      .items-center { align-items: center; }
+      .justify-between { justify-content: space-between; }
+      .gap-2 { gap: 8px; }
+      .gap-6 { gap: 24px; }
+      .w-1-2 { width: 50%; }
+      .space-y-1 > * + * { margin-top: 4px; }
+      .space-y-2 > * + * { margin-top: 8px; }
+      .space-y-4 > * + * { margin-top: 16px; }
+      .space-y-6 > * + * { margin-top: 24px; }
+      .mb-1 { margin-bottom: 4px; }
+      .mb-2 { margin-bottom: 8px; }
+      .mb-4 { margin-bottom: 16px; }
+      .mt-4 { margin-top: 16px; }
+      .mt-6 { margin-top: 24px; }
+      .mt-8 { margin-top: 32px; }
+      .pt-4 { padding-top: 16px; }
+      .pb-4 { padding-bottom: 16px; }
+      .px-3 { padding-left: 12px; padding-right: 12px; }
+      .py-2 { padding-top: 8px; padding-bottom: 8px; }
+      .text-xs { font-size: 10px; }
+      .text-sm { font-size: 12px; }
+      .text-lg { font-size: 18px; }
+      .text-xl { font-size: 20px; }
+      .border-t-4 { border-top-width: 4px; }
+      .border-gray-300 { border-color: #d1d5db; }
+      .border-gray-400 { border-color: #9ca3af; }
+      .text-gray-700 { color: #374151; }
+      .w-32 { width: 128px; }
+      .h-4 { height: 16px; width: 16px; }
+      .h-1 { height: 4px; }
+      .w-full { width: 100%; }
+      .logo-img { height: auto; max-width: 180px; }
+      .icon { display: inline-block; vertical-align: middle; }
     </style>
   </head>
   <body>
     <div class="card">
       ${logoBase64 ? `<img src="${logoBase64}" alt="Watermark" class="watermark" />` : ""}
       <div class="content">
-      <div class="text-center border-b pb-4">
-        <h1 class="text-lg font-bold mb-2 text-primary">STRIX DEVELOPMENT PVT LTD</h1>
-        <p class="text-sm mb-1">CIN: U72900HP2021PTC008329</p>
-        <p class="text-sm mb-2">GST: 02ABFCS3765D1Z</p>
-        <h2 class="font-semibold text-primary mt-4">Salary Slip</h2>
+      <!-- Company Header with Logo -->
+      <div class="pb-4">
+        <div class="flex justify-between items-center mb-4">
+          <!-- Logo on Left -->
+          <div class="flex items-center">
+            ${logoBase64 ? `<img src="${logoBase64}" alt="STRIX Logo" class="logo-img" />` : ""}
+          </div>
+          <!-- CIN and GST on Right -->
+          <div class="text-right space-y-1">
+            <p class="text-sm text-gray-700 font-semibold">CIN : U72900HP2021PTC008329</p>
+            <p class="text-sm text-gray-700 font-semibold">GST : 02ABFCS3765D1Z</p>
+          </div>
+        </div>
+        <div class="text-center mt-4">
+          <div class="mb-2 h-1 w-full" style="background-color: ${primaryColor};"></div>
+          <h2 class="text-xl font-semibold" style="color: #000000;">Salary Slip</h2>
+        </div>
       </div>
 
-      <div style="margin-top:16px;">
-        <table>
+      <!-- Employee Details Table -->
+      <div class="space-y-3">
+        <table class="w-full border-collapse">
           <tbody>
-            <tr class="border-b">
-              <td class="font-semibold text-sm" style="width:33%;">Employee Name:</td>
-              <td class="text-sm">${employee?.name ?? "________________"}</td>
+            <tr class="border-b border-gray-300">
+              <td class="py-2 px-3 font-semibold text-sm" style="width:33%;">Employee Name:</td>
+              <td class="py-2 px-3 text-sm">${employee?.name ?? "________________"}</td>
             </tr>
-            <tr class="border-b">
-              <td class="font-semibold text-sm">Employee ID:</td>
-              <td class="text-sm">${employee?.employee_id ?? "________________"}</td>
+            <tr class="border-b border-gray-300">
+              <td class="py-2 px-3 font-semibold text-sm">Employee ID:</td>
+              <td class="py-2 px-3 text-sm">${employee?.employee_id ?? "________________"}</td>
             </tr>
-            <tr class="border-b">
-              <td class="font-semibold text-sm">Designation:</td>
-              <td class="text-sm">${employee?.designation ?? "________________"}</td>
+            <tr class="border-b border-gray-300">
+              <td class="py-2 px-3 font-semibold text-sm">Designation:</td>
+              <td class="py-2 px-3 text-sm">${employee?.designation ?? "________________"}</td>
             </tr>
-            <tr class="border-b">
-              <td class="font-semibold text-sm">Department:</td>
-              <td class="text-sm">${employee?.department ?? "________________"}</td>
+            <tr class="border-b border-gray-300">
+              <td class="py-2 px-3 font-semibold text-sm">Department:</td>
+              <td class="py-2 px-3 text-sm">${employee?.department ?? "________________"}</td>
             </tr>
-            <tr class="border-b">
-              <td class="font-semibold text-sm">Month:</td>
-              <td class="text-sm">${monthName || "________"}</td>
+            <tr class="border-b border-gray-300">
+              <td class="py-2 px-3 font-semibold text-sm">Month:</td>
+              <td class="py-2 px-3 text-sm">${monthName || "________"}</td>
             </tr>
-            <tr class="border-b">
-              <td class="font-semibold text-sm">Year:</td>
-              <td class="text-sm">${salary.year}</td>
+            <tr class="border-b border-gray-300">
+              <td class="py-2 px-3 font-semibold text-sm">Year:</td>
+              <td class="py-2 px-3 text-sm">${salary.year}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div style="margin-top:16px;">
-        <h3 class="font-semibold text-primary">Earnings</h3>
-        <table class="border" style="margin-top:4px;">
+      <!-- Earnings Table -->
+      <div class="space-y-2">
+        <h3 class="font-semibold text-lg" style="color: ${primaryColor};">Earnings</h3>
+        <table class="w-full border-collapse border border-gray-300">
           <thead>
             <tr class="bg-muted">
-              <th class="border font-semibold">Earnings</th>
-              <th class="border font-semibold text-right">Amount (INR)</th>
+              <th class="text-left py-2 px-3 font-semibold border border-gray-300">Earnings</th>
+              <th class="text-right py-2 px-3 font-semibold border border-gray-300">Amount (INR)</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td class="border">Basic Salary</td>
-              <td class="border text-right">${formatCurrency(basicSalary)}</td>
+            <tr class="border-b border-gray-300">
+              <td class="py-2 px-3 border border-gray-300">Basic Salary</td>
+              <td class="text-right py-2 px-3 border border-gray-300">${formatCurrency(basicSalary)}</td>
             </tr>
-            <tr>
-              <td class="border">Allowances</td>
-              <td class="border text-right">${formatCurrency(allowances)}</td>
+            <tr class="border-b border-gray-300">
+              <td class="py-2 px-3 border border-gray-300">Allowances</td>
+              <td class="text-right py-2 px-3 border border-gray-300">${formatCurrency(allowances)}</td>
             </tr>
-            <tr>
-              <td class="border">Bonus</td>
-              <td class="border text-right">${formatCurrency(bonus)}</td>
+            <tr class="border-b border-gray-300">
+              <td class="py-2 px-3 border border-gray-300">Bonus</td>
+              <td class="text-right py-2 px-3 border border-gray-300">${formatCurrency(bonus)}</td>
             </tr>
-            <tr class="bg-muted">
-              <td class="border font-semibold">Gross Salary</td>
-              <td class="border font-semibold text-right">${formatCurrency(grossSalary)}</td>
+            <tr class="border-b border-gray-300 bg-muted">
+              <td class="py-2 px-3 font-semibold border border-gray-300">Gross Salary</td>
+              <td class="text-right py-2 px-3 font-semibold border border-gray-300">${formatCurrency(grossSalary)}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div style="margin-top:16px;">
-        <h3 class="font-semibold text-primary">Deductions</h3>
-        <table class="border" style="margin-top:4px;">
+      <!-- Deductions Table -->
+      <div class="space-y-2">
+        <h3 class="font-semibold text-lg" style="color: ${primaryColor};">Deductions</h3>
+        <table class="w-full border-collapse border border-gray-300">
           <thead>
             <tr class="bg-muted">
-              <th class="border font-semibold">Deductions</th>
-              <th class="border font-semibold text-right">Amount (INR)</th>
+              <th class="text-left py-2 px-3 font-semibold border border-gray-300">Deductions</th>
+              <th class="text-right py-2 px-3 font-semibold border border-gray-300">Amount (INR)</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td class="border">Advance</td>
-              <td class="border text-right">${formatCurrency(advance)}</td>
+            <tr class="border-b border-gray-300">
+              <td class="py-2 px-3 border border-gray-300">Advance</td>
+              <td class="text-right py-2 px-3 border border-gray-300">${formatCurrency(advance)}</td>
             </tr>
-            <tr>
-              <td class="border">Leave / LOP</td>
-              <td class="border text-right">${formatCurrency(leaveLop)}</td>
+            <tr class="border-b border-gray-300">
+              <td class="py-2 px-3 border border-gray-300">Leave / LOP</td>
+              <td class="text-right py-2 px-3 border border-gray-300">${formatCurrency(leaveLop)}</td>
             </tr>
-            <tr>
-              <td class="border">Penalty (if any)</td>
-              <td class="border text-right">${formatCurrency(penalty)}</td>
+            <tr class="border-b border-gray-300">
+              <td class="py-2 px-3 border border-gray-300">Penalty (if any)</td>
+              <td class="text-right py-2 px-3 border border-gray-300">${formatCurrency(penalty)}</td>
             </tr>
-            <tr class="bg-muted">
-              <td class="border font-semibold">Total Deductions</td>
-              <td class="border font-semibold text-right">${formatCurrency(totalDeductions)}</td>
+            <tr class="border-b border-gray-300 bg-muted">
+              <td class="py-2 px-3 font-semibold border border-gray-300">Total Deductions</td>
+              <td class="text-right py-2 px-3 font-semibold border border-gray-300">${formatCurrency(totalDeductions)}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div style="margin-top:16px;">
-        <h3 class="font-semibold text-primary">Net Pay</h3>
-        <table class="border" style="margin-top:4px;">
+      <!-- Net Pay -->
+      <div class="space-y-2">
+        <h3 class="font-semibold text-lg" style="color: ${primaryColor};">Net Pay</h3>
+        <table class="w-full border-collapse border border-gray-300">
           <thead>
             <tr class="bg-muted">
-              <th class="border font-semibold">Net Salary (Payable)</th>
-              <th class="border font-semibold text-right">Amount (INR)</th>
+              <th class="text-left py-2 px-3 font-semibold border border-gray-300">Net Salary (Payable)</th>
+              <th class="text-right py-2 px-3 font-semibold border border-gray-300">Amount (INR)</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td class="border font-semibold">Net Salary (Payable)</td>
-              <td class="border font-semibold text-right text-primary">${formatCurrency(
-                netSalary
-              )}</td>
+            <tr class="border-b border-gray-300">
+              <td class="py-2 px-3 font-semibold border border-gray-300">Net Salary (Payable)</td>
+              <td class="text-right py-2 px-3 font-semibold text-lg border border-gray-300" style="color: ${primaryColor};">
+                ${formatCurrency(netSalary)}
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div class="pt-4 border-t" style="margin-top:16px;">
+      <!-- Footer -->
+      <div class="space-y-4 pt-4 border-t border-gray-300">
         <div class="text-sm">
           <span class="font-semibold">Date:</span> ${formatDate(salary.date) || "________"}
         </div>
         <div class="flex justify-between items-end mt-8">
           <div>
             <p class="font-semibold mb-2">Authorized Signatory</p>
-            <div class="border-t" style="width:128px; margin-top:24px;"></div>
+            <div class="border-t border-gray-400 w-32 mt-8"></div>
           </div>
-          <div style="text-align:right;">
+          <div class="text-right">
             <p class="font-semibold mb-2">Acceptance</p>
             <p class="text-sm mb-2">${
               employee?.name ? `Mr. ${employee.name}` : "________________"
@@ -278,13 +329,51 @@ async function generateSalaryPdfHtml(
             <p class="text-sm">(Signature and Date)</p>
           </div>
         </div>
-        <div class="text-xs text-center mt-6 pt-4 border-t">
-          <p class="font-semibold text-primary">STRIX Development Pvt. Ltd</p>
-          <p>NH-21, Near Union Bank, 1st & 2nd Floor Main bazar Ner - chowk, Teh-Balh, Distt. Mandi, HP 175008-India</p>
-          <div class="footer-row">
-            <span>Email: info@strixdevelopment.net</span>
-            <span>Website: www.strixdevelopment.net</span>
-            <span>Phone: +91 85570-17061, +91 9805997318</span>
+
+        <!-- Bottom company/contact bar -->
+        <div class="mt-6 pt-4 border-t-4" style="border-color: ${primaryColor};">
+          <div class="flex flex-row justify-between gap-6 text-xs text-gray-700">
+            <!-- Left: company name + address -->
+            <div class="w-1-2 space-y-1">
+              <p class="font-semibold" style="color: ${primaryColor};">
+                STRIX Development Pvt. Ltd
+              </p>
+              <p>
+                NH-21, Near Union Bank, 1st &amp; 2nd Floor Main bazar Ner - chowk, Teh-Balh,
+                Distt. Mandi, HP 175008-India
+              </p>
+            </div>
+
+            <!-- Right: contact info with icons (using SVG icons) -->
+            <div class="w-1-2 flex flex-col gap-2">
+              <div class="flex items-center gap-2">
+                <svg class="icon h-4" style="color: ${primaryColor};" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+                <p>
+                  <span class="font-semibold">Email:</span>
+                  <span> info@strixdevelopment.net</span>
+                </p>
+              </div>
+              <div class="flex items-center gap-2">
+                <svg class="icon h-4" style="color: ${primaryColor};" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
+                </svg>
+                <p>
+                  <span class="font-semibold">Website:</span>
+                  <span> www.strixdevelopment.net</span>
+                </p>
+              </div>
+              <div class="flex items-center gap-2">
+                <svg class="icon h-4" style="color: ${primaryColor};" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                </svg>
+                <p>
+                  <span class="font-semibold">Phone:</span>
+                  <span> +91 85570-17061, +91 9805997318</span>
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
