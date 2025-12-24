@@ -6,7 +6,7 @@ import { hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
 import Image from "next/image";
 import { Suspense } from "react";
-import strixLogo from "./Strix-logo-1.png";
+import strixLogo from "./logo.png";
 import { Button } from "@/components/ui/button";
 
 export default function Home() {
