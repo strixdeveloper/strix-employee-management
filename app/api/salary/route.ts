@@ -399,10 +399,27 @@ async function generateAndStoreSalaryPdf(
   let browser;
   if (isProduction) {
     // Use @sparticuz/chromium for Vercel/serverless
+    // Get the executable path first
+    const executablePath = await chromium.executablePath();
+    
     browser = await puppeteer.launch({
-      args: chromium.args,
+      args: [
+        ...chromium.args,
+        '--hide-scrollbars',
+        '--disable-web-security',
+        '--disable-features=IsolateOrigins,site-per-process',
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--disable-gpu',
+        '--disable-software-rasterizer',
+      ],
       defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
+      executablePath,
       headless: chromium.headless,
     });
   } else {
@@ -417,10 +434,16 @@ async function generateAndStoreSalaryPdf(
     } catch (error) {
       // Fallback: try using chromium from @sparticuz/chromium in development
       console.warn('Chrome not found via channel, trying chromium fallback:', error);
+      const executablePath = await chromium.executablePath();
       browser = await puppeteer.launch({
-        args: chromium.args,
+        args: [
+          ...chromium.args,
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+        ],
         defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
+        executablePath,
         headless: chromium.headless,
       });
     }
