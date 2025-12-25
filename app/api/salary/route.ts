@@ -1,6 +1,7 @@
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
@@ -392,9 +393,38 @@ async function generateAndStoreSalaryPdf(
 
   const html = await generateSalaryPdfHtml(salary, employee);
 
-  const browser = await puppeteer.launch({
-    headless: true,
-  });
+  // Configure Puppeteer for Vercel serverless environment
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
+  
+  let browser;
+  if (isProduction) {
+    // Use @sparticuz/chromium for Vercel/serverless
+    browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+    });
+  } else {
+    // For local development, try to use system Chrome
+    // First try using channel (auto-detects Chrome)
+    try {
+      browser = await puppeteer.launch({
+        channel: 'chrome', // Automatically finds Chrome installation
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      });
+    } catch (error) {
+      // Fallback: try using chromium from @sparticuz/chromium in development
+      console.warn('Chrome not found via channel, trying chromium fallback:', error);
+      browser = await puppeteer.launch({
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
+      });
+    }
+  }
   try {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
