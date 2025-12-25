@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Clock,
   User,
+  CalendarCheck,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -41,6 +42,11 @@ const menuItems: MenuItem[] = [
     title: "Employees",
     url: "/protected/employees",
     icon: Users,
+  },
+  {
+    title: "Attendance",
+    url: "/protected/attendance",
+    icon: CalendarCheck,
   },
   {
     title: "Salary",
