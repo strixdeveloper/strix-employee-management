@@ -3,6 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import strixLogo from "@/app/Strix-logo-1.png";
+import stampImage from "@/app/Stam.png";
 import { Mail, Globe, Phone } from "lucide-react";
 
 interface SalaryPreviewData {
@@ -236,7 +237,18 @@ export function SalaryPreview({ formData, employee }: SalaryPreviewProps) {
             <div className="flex justify-between items-end mt-8">
               <div>
                 <p className="font-semibold mb-2">Authorized Signatory</p>
-                <div className="border-t border-gray-400 w-32 mt-8"></div>
+                <div className="mt-2 flex items-center justify-start">
+                  <Image
+                    src={stampImage}
+                    alt="Signature and Stamp"
+                    width={200}
+                    height={100}
+                    className="h-auto"
+                    style={{ 
+                      maxWidth: "200px"
+                    }}
+                  />
+                </div>
               </div>
               <div className="text-right">
                 <p className="font-semibold mb-2">Acceptance</p>

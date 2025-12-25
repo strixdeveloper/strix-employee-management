@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 export function NavUser() {
   const router = useRouter();
   const { isCollapsed } = useSidebar();
-  const [user, setUser] = useState<{ email?: string; name?: string } | null>(null);
+  const [user, setUser] = useState<{ email?: string; name?: string; avatar_url?: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,12 +32,29 @@ export function NavUser() {
         setUser({
           email: user.email,
           name: user.user_metadata?.full_name || user.email?.split("@")[0] || "User",
+          avatar_url: user.user_metadata?.avatar_url || null,
         });
       }
       setLoading(false);
     }
     
     fetchUser();
+
+    // Listen for auth state changes to update avatar when it changes
+    const supabase = createClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        setUser({
+          email: session.user.email,
+          name: session.user.user_metadata?.full_name || session.user.email?.split("@")[0] || "User",
+          avatar_url: session.user.user_metadata?.avatar_url || null,
+        });
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -73,7 +90,7 @@ export function NavUser() {
         <DropdownMenuTrigger className="w-full">
           <div className="flex items-center justify-center rounded-lg p-2 hover:bg-accent transition-colors cursor-pointer">
             <Avatar className="h-8 w-8">
-              <AvatarImage src="" alt={user?.name || "User"} />
+              <AvatarImage src={user?.avatar_url || ""} alt={user?.name || "User"} />
               <AvatarFallback className="bg-gradient-to-r from-pink-500 to-fuchsia-500 text-white text-xs">
                 {initials}
               </AvatarFallback>
@@ -105,7 +122,7 @@ export function NavUser() {
       <DropdownMenuTrigger className="w-full">
         <div className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-accent transition-colors cursor-pointer">
           <Avatar className="h-8 w-8">
-            <AvatarImage src="" alt={user?.name || "User"} />
+            <AvatarImage src={user?.avatar_url || ""} alt={user?.name || "User"} />
             <AvatarFallback className="bg-gradient-to-r from-pink-500 to-fuchsia-500 text-white">
               {initials}
             </AvatarFallback>

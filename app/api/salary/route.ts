@@ -72,6 +72,16 @@ async function generateSalaryPdfHtml(
     console.error("Error reading logo file:", error);
   }
 
+  // Read stamp/signature image and convert to base64
+  let stampBase64 = "";
+  try {
+    const stampPath = path.join(process.cwd(), "app", "Stam.png");
+    const stampBuffer = fs.readFileSync(stampPath);
+    stampBase64 = `data:image/png;base64,${stampBuffer.toString("base64")}`;
+  } catch (error) {
+    console.error("Error reading stamp file:", error);
+  }
+
   // Simple HTML template that mimics the on-screen preview
   return `
 <!DOCTYPE html>
@@ -312,7 +322,7 @@ async function generateSalaryPdfHtml(
         <div class="flex justify-between items-end mt-8">
           <div>
             <p class="font-semibold mb-2">Authorized Signatory</p>
-            <div class="border-t border-gray-400 w-32 mt-8"></div>
+            ${stampBase64 ? `<img src="${stampBase64}" alt="Signature and Stamp" style="max-width: 200px; height: auto; margin-top: 8px;" />` : `<div class="border-t border-gray-400 w-32 mt-8"></div>`}
           </div>
           <div class="text-right">
             <p class="font-semibold mb-2">Acceptance</p>
