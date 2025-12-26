@@ -11,6 +11,8 @@ import {
   Clock,
   User,
   CalendarCheck,
+  FolderKanban,
+  CalendarX,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -49,19 +51,29 @@ const menuItems: MenuItem[] = [
     icon: CalendarCheck,
   },
   {
+    title: "Projects",
+    url: "/protected/projects",
+    icon: FolderKanban,
+  },
+  {
+    title: "Leaves",
+    url: "/protected/leaves",
+    icon: CalendarX,
+  },
+  {
     title: "Salary",
     url: "/protected/salary",
     icon: DollarSign,
   },
   {
+    title: "Office Hours",
+    url: "/protected/office-hours",
+    icon: Clock,
+  },
+  {
     title: "Settings",
     icon: Settings,
     subItems: [
-      {
-        title: "Office Hours",
-        url: "/protected/settings/office-hours",
-        icon: Clock,
-      },
       {
         title: "Profile",
         url: "/protected/settings/profile",
