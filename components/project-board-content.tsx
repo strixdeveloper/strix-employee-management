@@ -73,7 +73,6 @@ interface Task {
   status: "todo" | "in_progress" | "review" | "done";
   priority?: "low" | "medium" | "high" | "urgent";
   assignee_id?: string;
-  assignee?: string; // For display (from join)
   due_date?: string;
   dueDate?: string; // For backward compatibility
   order_index?: number;
@@ -120,7 +119,7 @@ function TaskCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: task.id });
+  } = useSortable({ id: task.rowid.toString() });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -188,7 +187,7 @@ function TaskCard({
               {task.assignee && (
                 <div className="flex items-center gap-1 sm:gap-1.5">
                   <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                  <span className="truncate max-w-[80px] sm:max-w-[100px] font-medium text-xs">{task.assignee}</span>
+                  <span className="truncate max-w-[80px] sm:max-w-[100px] font-medium text-xs">{task.assignee?.name || task.assignee_id}</span>
                 </div>
               )}
             </div>
@@ -227,12 +226,12 @@ function DroppableColumn({
         </CardHeader>
         <CardContent className="p-3 sm:p-4 min-h-[400px] sm:min-h-[500px] bg-gray-50/50 dark:bg-gray-800/50">
           <SortableContext
-            items={columnTasks.map((t) => t.id)}
+            items={columnTasks.map((t) => t.rowid.toString())}
             strategy={verticalListSortingStrategy}
           >
             {columnTasks.map((task) => (
               <TaskCard 
-                key={task.id} 
+                key={task.rowid} 
                 task={task} 
                 onClick={() => onTaskClick(task)}
               />
@@ -333,7 +332,7 @@ export function ProjectBoardContent() {
   };
 
   const handleDragStart = (event: DragStartEvent) => {
-    const task = tasks.find((t) => t.id === event.active.id);
+    const task = tasks.find((t) => t.rowid.toString() === event.active.id);
     setActiveTask(task || null);
   };
 
@@ -343,7 +342,7 @@ export function ProjectBoardContent() {
 
     if (!over) return;
 
-    const activeTask = tasks.find((t) => t.id === active.id);
+    const activeTask = tasks.find((t) => t.rowid.toString() === active.id);
     if (!activeTask) return;
 
     const overId = over.id as string;
@@ -353,7 +352,7 @@ export function ProjectBoardContent() {
     if (isColumn) {
       newStatus = overId as Task["status"];
     } else {
-      const overTask = tasks.find((t) => t.id === over.id);
+      const overTask = tasks.find((t) => t.rowid.toString() === over.id);
       if (!overTask || activeTask.status === overTask.status) return;
       newStatus = overTask.status;
     }
@@ -680,7 +679,7 @@ export function ProjectBoardContent() {
                             )}
                           </TableCell>
                           <TableCell>
-                            {task.assignee || (
+                            {task.assignee?.name || task.assignee_id || (
                               <span className="text-muted-foreground">Unassigned</span>
                             )}
                           </TableCell>
@@ -719,7 +718,7 @@ export function ProjectBoardContent() {
                 ) : (
                   tasks.map((task) => (
                     <Card
-                      key={task.id}
+                      key={task.rowid}
                       className="cursor-pointer hover:shadow-md transition-all"
                       onClick={() => handleTaskClick(task)}
                     >
@@ -759,7 +758,7 @@ export function ProjectBoardContent() {
                           {task.assignee && (
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <Users className="h-3 w-3" />
-                              <span>{task.assignee}</span>
+                              <span>{task.assignee?.name || task.assignee_id || "Unassigned"}</span>
                             </div>
                           )}
                           {task.dueDate && (

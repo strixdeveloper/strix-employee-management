@@ -1,7 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@/components/ui/tabs";
 import {
   Users,
   UserCheck,
@@ -11,14 +17,15 @@ import {
   TrendingUp,
   Clock,
   Briefcase,
+  CalendarCheck,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DashboardStats {
   totalEmployees: number;
-  activeToday: number;
   departments: number;
-  totalSalaryThisMonth: number;
+  totalSalary: number;
   onLeaveToday: number;
   presentToday: number;
   absentToday: number;
@@ -32,9 +39,8 @@ interface DashboardStats {
 export function DashboardContent() {
   const [stats, setStats] = React.useState<DashboardStats>({
     totalEmployees: 0,
-    activeToday: 0,
     departments: 0,
-    totalSalaryThisMonth: 0,
+    totalSalary: 0,
     onLeaveToday: 0,
     presentToday: 0,
     absentToday: 0,
@@ -45,22 +51,28 @@ export function DashboardContent() {
     recentActivity: [],
   });
   const [loading, setLoading] = React.useState(true);
+  const [timePeriod, setTimePeriod] = React.useState<"today" | "month" | "overall">("today");
 
   React.useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [timePeriod]);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
       
+      const today = new Date().toISOString().split("T")[0];
+      const currentMonth = new Date().getMonth() + 1;
+      const currentYear = new Date().getFullYear();
+      const monthStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
+      
       // Fetch all data in parallel
       const [employeesRes, attendanceRes, salaryRes, projectsRes, leavesRes] = await Promise.all([
         fetch("/api/employee"),
-        fetch(`/api/attendance?date=${new Date().toISOString().split("T")[0]}`),
+        fetch(`/api/attendance${timePeriod === "today" ? `?date=${today}` : timePeriod === "month" ? `?start_date=${monthStart}&end_date=${today}` : ""}`),
         fetch("/api/salary"),
         fetch("/api/project"),
-        fetch("/api/leaves"),
+        fetch(`/api/leaves${timePeriod === "today" ? `?start_date=${today}&end_date=${today}` : timePeriod === "month" ? `?start_date=${monthStart}&end_date=${today}` : ""}`),
       ]);
 
       const [employeesData, attendanceData, salaryData, projectsData, leavesData] = await Promise.all([
@@ -77,41 +89,42 @@ export function DashboardContent() {
       const projects = projectsData.data || [];
       const leaves = leavesData.data || [];
 
-      // Calculate today's date
-      const today = new Date().toISOString().split("T")[0];
-      const todayAttendance = attendance.filter(
-        (a: any) => a.date === today
-      );
+      // Filter attendance based on time period
+      let filteredAttendance = attendance;
+      if (timePeriod === "today") {
+        filteredAttendance = attendance.filter((a: any) => a.date === today);
+      } else if (timePeriod === "month") {
+        filteredAttendance = attendance.filter((a: any) => {
+          const date = new Date(a.date);
+          return date >= new Date(monthStart) && date <= new Date(today);
+        });
+      }
 
       // Get unique departments
       const uniqueDepartments = new Set(
         employees.map((emp: any) => emp.department).filter(Boolean)
       );
 
-      // Calculate current month salary
-      const currentMonth = new Date().getMonth() + 1;
-      const currentYear = new Date().getFullYear();
-      const currentMonthSalaries = salaries.filter(
-        (s: any) => s.month === currentMonth && s.year === currentYear
-      );
-      const totalSalary = currentMonthSalaries.reduce(
-        (sum: number, s: any) => sum + (parseFloat(s.net_salary) || 0),
-        0
-      );
+      // Calculate salary based on time period
+      let totalSalary = 0;
+      if (timePeriod === "month" || timePeriod === "overall") {
+        const filteredSalaries = timePeriod === "month" 
+          ? salaries.filter((s: any) => s.month === currentMonth && s.year === currentYear)
+          : salaries;
+        totalSalary = filteredSalaries.reduce(
+          (sum: number, s: any) => sum + (parseFloat(s.net_salary) || 0),
+          0
+        );
+      }
 
-      // Calculate active today (checked in)
-      const activeToday = todayAttendance.filter(
-        (a: any) => a.check_in_time !== null
-      ).length;
-
-      // Calculate present, absent, on leave today
-      const presentToday = todayAttendance.filter(
+      // Calculate present, absent, on leave
+      const presentToday = filteredAttendance.filter(
         (a: any) => a.status === "present"
       ).length;
-      const absentToday = todayAttendance.filter(
+      const absentToday = filteredAttendance.filter(
         (a: any) => a.status === "absent"
       ).length;
-      const onLeaveToday = todayAttendance.filter(
+      const onLeaveToday = filteredAttendance.filter(
         (a: any) => a.status === "leave"
       ).length;
 
@@ -120,9 +133,9 @@ export function DashboardContent() {
       const activeProjects = projects.filter((p: any) => {
         if (!p.deadline) return true;
         const deadline = new Date(p.deadline);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return deadline >= today;
+        const todayDate = new Date();
+        todayDate.setHours(0, 0, 0, 0);
+        return deadline >= todayDate;
       }).length;
 
       // Calculate leaves stats
@@ -162,9 +175,8 @@ export function DashboardContent() {
 
       setStats({
         totalEmployees: employees.length,
-        activeToday,
         departments: uniqueDepartments.size,
-        totalSalaryThisMonth: totalSalary,
+        totalSalary,
         onLeaveToday,
         presentToday,
         absentToday,
@@ -213,214 +225,181 @@ export function DashboardContent() {
   }
 
   return (
-    <div className="p-4 lg:p-8">
+    <div className="p-4 lg:p-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 min-h-screen">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div>
-          <h2 className="text-3xl font-bold mb-2">Dashboard</h2>
-          <p className="text-muted-foreground text-sm">
-            Overview of your employee management system
-          </p>
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-fuchsia-600 bg-clip-text text-transparent mb-2">
+                Dashboard
+              </h2>
+              <p className="text-muted-foreground text-sm">
+                Overview of your employee management system
+              </p>
+            </div>
+            
+            {/* Time Period Tabs */}
+            <Tabs value={timePeriod} onValueChange={(v) => setTimePeriod(v as "today" | "month" | "overall")}>
+              <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-gray-800">
+                <TabsTrigger value="today" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700">
+                  Today
+                </TabsTrigger>
+                <TabsTrigger value="month" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700">
+                  This Month
+                </TabsTrigger>
+                <TabsTrigger value="overall" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700">
+                  Overall
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
 
-        {/* Main Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Key Metrics Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Total Employees */}
-          <Card className="bg-gradient-to-br from-pink-50 to-fuchsia-50 dark:from-pink-950/20 dark:to-fuchsia-950/20 border-pink-200 dark:border-pink-800 hover:shadow-lg transition-shadow">
+          <Card className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 hover:shadow-xl hover:border-pink-300 dark:hover:border-pink-600 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-muted-foreground mb-2">
                     Total Employees
                   </p>
-                  <p className="text-3xl font-bold">{stats.totalEmployees}</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.totalEmployees}</p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center">
-                  <Users className="h-6 w-6 text-pink-600 dark:text-pink-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Active Today */}
-          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800 hover:shadow-lg transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
-                    Active Today
-                  </p>
-                  <p className="text-3xl font-bold">{stats.activeToday}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {stats.presentToday} present
-                  </p>
-                </div>
-                <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                  <UserCheck className="h-6 w-6 text-green-600 dark:text-green-400" />
+                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-pink-500 to-fuchsia-500 flex items-center justify-center shadow-lg">
+                  <Users className="h-7 w-7 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Departments */}
-          <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 border-blue-200 dark:border-blue-800 hover:shadow-lg transition-shadow">
+          <Card className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 hover:shadow-xl hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-muted-foreground mb-2">
                     Departments
                   </p>
-                  <p className="text-3xl font-bold">{stats.departments}</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.departments}</p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <Building2 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
+                  <Building2 className="h-7 w-7 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
-        </div>
 
-        {/* Additional Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Total Salary This Month */}
-          <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 border-purple-200 dark:border-purple-800 hover:shadow-lg transition-shadow">
+          {/* Salary */}
+          <Card className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 hover:shadow-xl hover:border-purple-300 dark:hover:border-purple-600 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
-                    Salary This Month
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-muted-foreground mb-2">
+                    {timePeriod === "today" ? "Salary (This Month)" : timePeriod === "month" ? "Salary (This Month)" : "Total Salary"}
                   </p>
-                  <p className="text-xl font-bold">
-                    {formatCurrency(stats.totalSalaryThisMonth)}
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {formatCurrency(stats.totalSalary)}
                   </p>
                 </div>
-                <div className="h-10 w-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-purple-500 to-violet-500 flex items-center justify-center shadow-lg">
+                  <DollarSign className="h-7 w-7 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Present Today */}
-          <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 border-emerald-200 dark:border-emerald-800 hover:shadow-lg transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
-                    Present Today
-                  </p>
-                  <p className="text-xl font-bold">{stats.presentToday}</p>
-                </div>
-                <div className="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Absent Today */}
-          <Card className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/20 dark:to-rose-950/20 border-red-200 dark:border-red-800 hover:shadow-lg transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
-                    Absent Today
-                  </p>
-                  <p className="text-xl font-bold">{stats.absentToday}</p>
-                </div>
-                <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-red-600 dark:text-red-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* On Leave Today */}
-          <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200 dark:border-amber-800 hover:shadow-lg transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
-                    On Leave Today
-                  </p>
-                  <p className="text-xl font-bold">{stats.onLeaveToday}</p>
-                </div>
-                <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                  <Calendar className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Projects and Leaves Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Total Projects */}
-          <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border-indigo-200 dark:border-indigo-800 hover:shadow-lg transition-shadow">
+          <Card className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 hover:shadow-xl hover:border-indigo-300 dark:hover:border-indigo-600 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-muted-foreground mb-2">
                     Total Projects
                   </p>
-                  <p className="text-xl font-bold">{stats.totalProjects}</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.totalProjects}</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     {stats.activeProjects} active
                   </p>
                 </div>
-                <div className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-                  <Briefcase className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg">
+                  <Briefcase className="h-7 w-7 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Attendance & Leaves Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Present */}
+          <Card className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 hover:shadow-xl hover:border-green-300 dark:hover:border-green-600 transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-muted-foreground mb-2">
+                    {timePeriod === "today" ? "Present Today" : timePeriod === "month" ? "Present (This Month)" : "Total Present"}
+                  </p>
+                  <p className="text-3xl font-bold text-green-600 dark:text-green-400">{stats.presentToday}</p>
+                </div>
+                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg">
+                  <CalendarCheck className="h-7 w-7 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Active Projects */}
-          <Card className="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950/20 dark:to-cyan-950/20 border-teal-200 dark:border-teal-800 hover:shadow-lg transition-shadow">
+          {/* Absent */}
+          <Card className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 hover:shadow-xl hover:border-red-300 dark:hover:border-red-600 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
-                    Active Projects
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-muted-foreground mb-2">
+                    {timePeriod === "today" ? "Absent Today" : timePeriod === "month" ? "Absent (This Month)" : "Total Absent"}
                   </p>
-                  <p className="text-xl font-bold">{stats.activeProjects}</p>
+                  <p className="text-3xl font-bold text-red-600 dark:text-red-400">{stats.absentToday}</p>
                 </div>
-                <div className="h-10 w-10 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-red-500 to-rose-500 flex items-center justify-center shadow-lg">
+                  <AlertCircle className="h-7 w-7 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* On Leave */}
+          <Card className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 hover:shadow-xl hover:border-amber-300 dark:hover:border-amber-600 transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-muted-foreground mb-2">
+                    {timePeriod === "today" ? "On Leave Today" : timePeriod === "month" ? "On Leave (This Month)" : "Total On Leave"}
+                  </p>
+                  <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">{stats.onLeaveToday}</p>
+                </div>
+                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg">
+                  <Calendar className="h-7 w-7 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Pending Leaves */}
-          <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 border-yellow-200 dark:border-yellow-800 hover:shadow-lg transition-shadow">
+          <Card className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 hover:shadow-xl hover:border-yellow-300 dark:hover:border-yellow-600 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-muted-foreground mb-2">
                     Pending Leaves
                   </p>
-                  <p className="text-xl font-bold">{stats.pendingLeaves}</p>
-                </div>
-                <div className="h-10 w-10 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Total Leaves */}
-          <Card className="bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950/20 dark:to-pink-950/20 border-rose-200 dark:border-rose-800 hover:shadow-lg transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
-                    Total Leaves
+                  <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{stats.pendingLeaves}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {stats.totalLeaves} total
                   </p>
-                  <p className="text-xl font-bold">{stats.totalLeaves}</p>
                 </div>
-                <div className="h-10 w-10 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
-                  <Calendar className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-yellow-500 to-amber-500 flex items-center justify-center shadow-lg">
+                  <Clock className="h-7 w-7 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -476,11 +455,13 @@ export function DashboardContent() {
           </Card>
 
           {/* Quick Stats Summary */}
-          <Card className="border-2">
+          <Card className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-lg font-semibold">Today's Summary</h3>
+                  <h3 className="text-lg font-semibold">
+                    {timePeriod === "today" ? "Today's Summary" : timePeriod === "month" ? "This Month Summary" : "Overall Summary"}
+                  </h3>
                   <p className="text-sm text-muted-foreground">
                     Attendance overview
                   </p>

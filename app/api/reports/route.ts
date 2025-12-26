@@ -392,21 +392,23 @@ async function getProjectsReport(supabase: any, employeeId: string | null, month
 
 // Summary Report - All metrics
 async function getSummaryReport(supabase: any, startDate: string, endDate: string) {
-  const [overtimeRes, attendanceRes, projectsRes] = await Promise.all([
+  const [overtimeRes, attendanceRes, projectsRes, leavesRes] = await Promise.all([
     getOvertimeReport(supabase, null, startDate, endDate),
     getAttendanceReport(supabase, null, startDate, endDate),
-    getProjectsReport(supabase, null, null, null)
+    getProjectsReport(supabase, null, null, null),
+    getLeavesReport(supabase, null, startDate, endDate)
   ]);
 
   const overtimeData = await overtimeRes.json();
   const attendanceData = await attendanceRes.json();
   const projectsData = await projectsRes.json();
+  const leavesData = await leavesRes.json();
 
   return NextResponse.json({
     overtime: overtimeData.summary,
     attendance: attendanceData.summary,
     projects: projectsData.summary,
-    leaves: attendanceData.summary?.totalLeaves || 0
+    leaves: leavesData.summary?.totalLeaves || 0
   });
 }
 
