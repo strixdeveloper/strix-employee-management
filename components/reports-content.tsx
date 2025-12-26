@@ -885,13 +885,33 @@ function AttendanceReport({ data }: { data: any }) {
 
 // Leaves Report Component
 function LeavesReport({ data }: { data: any }) {
-  if (!data) return null;
+  if (!data) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        <p>No leave data available. Please select a date range.</p>
+      </div>
+    );
+  }
 
   const employeeData = data.employeeData || [];
   const monthlyTrend = data.monthlyTrend || [];
+  const statusBreakdown = data.statusBreakdown || [];
   const summary = data.summary || {};
 
-  const pieData = employeeData.slice(0, 5).map((item: any) => ({
+  // Prepare chart data for top 5 employees by leave count
+  const topEmployees = employeeData
+    .sort((a: any, b: any) => b.leaveCount - a.leaveCount)
+    .slice(0, 5);
+
+  const barChartData = topEmployees.map((item: any) => ({
+    employee: item.employee.length > 15
+      ? item.employee.substring(0, 15) + "..."
+      : item.employee,
+    leaves: item.leaveCount,
+    days: item.leaveDays || item.leaveCount,
+  }));
+
+  const pieData = topEmployees.map((item: any) => ({
     name: item.employee.length > 15
       ? item.employee.substring(0, 15) + "..."
       : item.employee,
@@ -900,7 +920,7 @@ function LeavesReport({ data }: { data: any }) {
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card className="shadow-lg border border-gray-200 dark:border-gray-700">
           <CardContent className="p-6">
             <p className="text-sm text-muted-foreground mb-1">Total Leaves</p>
@@ -909,33 +929,112 @@ function LeavesReport({ data }: { data: any }) {
         </Card>
         <Card className="shadow-lg border border-gray-200 dark:border-gray-700">
           <CardContent className="p-6">
+            <p className="text-sm text-muted-foreground mb-1">Total Days</p>
+            <p className="text-2xl font-bold">{summary.totalDays || "0"}</p>
+          </CardContent>
+        </Card>
+        <Card className="shadow-lg border border-gray-200 dark:border-gray-700">
+          <CardContent className="p-6">
             <p className="text-sm text-muted-foreground mb-1">Employees</p>
             <p className="text-2xl font-bold">{summary.uniqueEmployees || "0"}</p>
           </CardContent>
         </Card>
+        <Card className="shadow-lg border border-gray-200 dark:border-gray-700">
+          <CardContent className="p-6">
+            <p className="text-sm text-muted-foreground mb-1">Avg Days/Leave</p>
+            <p className="text-2xl font-bold">
+              {summary.totalLeaves > 0 
+                ? (summary.totalDays / summary.totalLeaves).toFixed(1) 
+                : "0"}
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <Card className="shadow-lg border border-gray-200 dark:border-gray-700">
           <CardHeader>
             <CardTitle>Leaves by Employee (Top 5)</CardTitle>
           </CardHeader>
           <CardContent>
+            {barChartData.length === 0 ? (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                <p>No leave data available</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={barChartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="employee" 
+                    angle={-45} 
+                    textAnchor="end" 
+                    height={80}
+                  />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="leaves" fill="#ec4899" name="Leave Count" />
+                  <Bar dataKey="days" fill="#d946ef" name="Total Days" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg border border-gray-200 dark:border-gray-700">
+          <CardHeader>
+            <CardTitle>Monthly Leave Trend</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {monthlyTrend.length === 0 ? (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                <p>No monthly trend data available</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={monthlyTrend}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="count"
+                    stroke="#ec4899"
+                    strokeWidth={2}
+                    name="Leave Days"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Status Breakdown */}
+      {statusBreakdown.length > 0 && (
+        <Card className="shadow-lg border border-gray-200 dark:border-gray-700 mb-6">
+          <CardHeader>
+            <CardTitle>Leave Status Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={pieData}
+                  data={statusBreakdown}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
                   label={({ name, percent }) =>
                     `${name}: ${((percent || 0) * 100).toFixed(0)}%`
                   }
-                  outerRadius={80}
+                  outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {pieData.map((entry: any, index: number) => (
+                  {statusBreakdown.map((entry: any, index: number) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
@@ -947,24 +1046,55 @@ function LeavesReport({ data }: { data: any }) {
             </ResponsiveContainer>
           </CardContent>
         </Card>
+      )}
 
+      {/* Employee Leave Details Table */}
+      {employeeData.length > 0 && (
         <Card className="shadow-lg border border-gray-200 dark:border-gray-700">
           <CardHeader>
-            <CardTitle>Monthly Leave Trend</CardTitle>
+            <CardTitle>Employee Leave Details</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={monthlyTrend}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="count" fill="#f59e0b" />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee</TableHead>
+                    <TableHead>Employee ID</TableHead>
+                    <TableHead className="text-right">Leave Count</TableHead>
+                    <TableHead className="text-right">Total Days</TableHead>
+                    <TableHead>Date Ranges</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {employeeData.map((emp: any) => (
+                    <TableRow key={emp.employeeId} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <TableCell className="font-medium">{emp.employee}</TableCell>
+                      <TableCell className="text-muted-foreground">{emp.employeeId}</TableCell>
+                      <TableCell className="text-right font-semibold">{emp.leaveCount}</TableCell>
+                      <TableCell className="text-right font-semibold">{emp.leaveDays || emp.leaveCount}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1 max-w-md">
+                          {emp.dates?.slice(0, 3).map((date: string, idx: number) => (
+                            <span key={idx} className="text-xs text-muted-foreground">
+                              {date}
+                            </span>
+                          ))}
+                          {emp.dates?.length > 3 && (
+                            <span className="text-xs text-muted-foreground">
+                              +{emp.dates.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
-      </div>
+      )}
     </>
   );
 }
