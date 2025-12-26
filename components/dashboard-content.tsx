@@ -22,6 +22,10 @@ interface DashboardStats {
   onLeaveToday: number;
   presentToday: number;
   absentToday: number;
+  totalProjects: number;
+  activeProjects: number;
+  pendingLeaves: number;
+  totalLeaves: number;
   recentActivity: any[];
 }
 
@@ -34,6 +38,10 @@ export function DashboardContent() {
     onLeaveToday: 0,
     presentToday: 0,
     absentToday: 0,
+    totalProjects: 0,
+    activeProjects: 0,
+    pendingLeaves: 0,
+    totalLeaves: 0,
     recentActivity: [],
   });
   const [loading, setLoading] = React.useState(true);
@@ -47,21 +55,27 @@ export function DashboardContent() {
       setLoading(true);
       
       // Fetch all data in parallel
-      const [employeesRes, attendanceRes, salaryRes] = await Promise.all([
+      const [employeesRes, attendanceRes, salaryRes, projectsRes, leavesRes] = await Promise.all([
         fetch("/api/employee"),
         fetch(`/api/attendance?date=${new Date().toISOString().split("T")[0]}`),
         fetch("/api/salary"),
+        fetch("/api/project"),
+        fetch("/api/leaves"),
       ]);
 
-      const [employeesData, attendanceData, salaryData] = await Promise.all([
+      const [employeesData, attendanceData, salaryData, projectsData, leavesData] = await Promise.all([
         employeesRes.json(),
         attendanceRes.json(),
         salaryRes.json(),
+        projectsRes.json(),
+        leavesRes.json(),
       ]);
 
       const employees = employeesData.data || [];
       const attendance = attendanceData.data || [];
       const salaries = salaryData.data || [];
+      const projects = projectsData.data || [];
+      const leaves = leavesData.data || [];
 
       // Calculate today's date
       const today = new Date().toISOString().split("T")[0];
@@ -101,16 +115,50 @@ export function DashboardContent() {
         (a: any) => a.status === "leave"
       ).length;
 
-      // Get recent activity (last 5 attendance records)
-      const recentActivity = attendance
-        .slice(0, 5)
-        .map((a: any) => ({
+      // Calculate projects stats
+      const totalProjects = projects.length;
+      const activeProjects = projects.filter((p: any) => {
+        if (!p.deadline) return true;
+        const deadline = new Date(p.deadline);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return deadline >= today;
+      }).length;
+
+      // Calculate leaves stats
+      const totalLeaves = leaves.length;
+      const pendingLeaves = leaves.filter((l: any) => l.status === "pending").length;
+
+      // Get recent activity (last 5 records from attendance, projects, and leaves)
+      const recentActivity: any[] = [];
+      
+      // Add recent attendance
+      attendance.slice(0, 3).forEach((a: any) => {
+        recentActivity.push({
           type: "attendance",
           employee: a.employees?.name || a.employee_id,
           action: a.status === "present" ? "checked in" : a.status,
           time: a.check_in_time || a.date,
           date: a.date,
-        }));
+        });
+      });
+
+      // Add recent projects
+      projects.slice(0, 2).forEach((p: any) => {
+        recentActivity.push({
+          type: "project",
+          name: p.project_name,
+          action: "created",
+          date: p.created_at || new Date().toISOString().split("T")[0],
+        });
+      });
+
+      // Sort by date and take last 5
+      recentActivity.sort((a, b) => {
+        const dateA = new Date(a.date || a.time || 0).getTime();
+        const dateB = new Date(b.date || b.time || 0).getTime();
+        return dateB - dateA;
+      });
 
       setStats({
         totalEmployees: employees.length,
@@ -120,7 +168,11 @@ export function DashboardContent() {
         onLeaveToday,
         presentToday,
         absentToday,
-        recentActivity,
+        totalProjects,
+        activeProjects,
+        pendingLeaves,
+        totalLeaves,
+        recentActivity: recentActivity.slice(0, 5),
       });
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
@@ -301,6 +353,80 @@ export function DashboardContent() {
           </Card>
         </div>
 
+        {/* Projects and Leaves Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Total Projects */}
+          <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border-indigo-200 dark:border-indigo-800 hover:shadow-lg transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">
+                    Total Projects
+                  </p>
+                  <p className="text-xl font-bold">{stats.totalProjects}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {stats.activeProjects} active
+                  </p>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                  <Briefcase className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Active Projects */}
+          <Card className="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950/20 dark:to-cyan-950/20 border-teal-200 dark:border-teal-800 hover:shadow-lg transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">
+                    Active Projects
+                  </p>
+                  <p className="text-xl font-bold">{stats.activeProjects}</p>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pending Leaves */}
+          <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 border-yellow-200 dark:border-yellow-800 hover:shadow-lg transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">
+                    Pending Leaves
+                  </p>
+                  <p className="text-xl font-bold">{stats.pendingLeaves}</p>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Total Leaves */}
+          <Card className="bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950/20 dark:to-pink-950/20 border-rose-200 dark:border-rose-800 hover:shadow-lg transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">
+                    Total Leaves
+                  </p>
+                  <p className="text-xl font-bold">{stats.totalLeaves}</p>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
+                  <Calendar className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Main Content Area */}
         <div className="grid gap-6 md:grid-cols-2">
           {/* Recent Activity */}
@@ -310,7 +436,7 @@ export function DashboardContent() {
                 <div>
                   <h3 className="text-lg font-semibold">Recent Activity</h3>
                   <p className="text-sm text-muted-foreground">
-                    Latest attendance records
+                    Latest activity from attendance, projects & leaves
                   </p>
                 </div>
                 <Briefcase className="h-5 w-5 text-muted-foreground" />
@@ -328,16 +454,19 @@ export function DashboardContent() {
                     >
                       <div className="flex-1">
                         <p className="text-sm font-medium">
-                          {activity.employee}
+                          {activity.employee || activity.name || "Unknown"}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {activity.action} • {activity.date}
+                          {activity.type === "project" ? "Project" : activity.action} • {activity.date || activity.time?.split("T")[0] || "N/A"}
                         </p>
                       </div>
-                      {activity.time && activity.time !== "-" && (
+                      {activity.time && activity.time !== "-" && activity.type !== "project" && (
                         <div className="text-xs text-muted-foreground">
                           {formatTime(activity.time)}
                         </div>
+                      )}
+                      {activity.type === "project" && (
+                        <Briefcase className="h-4 w-4 text-muted-foreground" />
                       )}
                     </div>
                   ))

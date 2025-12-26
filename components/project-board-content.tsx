@@ -60,18 +60,28 @@ import {
   LayoutGrid,
   List,
   Edit2,
+  Trash2,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
 interface Task {
-  id: string;
+  rowid: number;
+  id?: string; // For backward compatibility with drag-and-drop
   title: string;
   description?: string;
   status: "todo" | "in_progress" | "review" | "done";
   priority?: "low" | "medium" | "high" | "urgent";
-  assignee?: string;
-  dueDate?: string;
+  assignee_id?: string;
+  assignee?: string; // For display (from join)
+  due_date?: string;
+  dueDate?: string; // For backward compatibility
+  order_index?: number;
+  created_by?: string;
+  assignee?: {
+    name: string;
+    employee_id: string;
+  };
 }
 
 interface Project {
@@ -280,6 +290,13 @@ export function ProjectBoardContent() {
   useEffect(() => {
     fetchProject();
     fetchTasks();
+    
+    // Real-time sync: Poll every 2 seconds
+    const interval = setInterval(() => {
+      fetchTasks();
+    }, 2000);
+
+    return () => clearInterval(interval);
   }, [projectId]);
 
   const fetchProject = async () => {
@@ -297,15 +314,22 @@ export function ProjectBoardContent() {
   };
 
   const fetchTasks = async () => {
-    const storedTasks = localStorage.getItem(`project-${projectId}-tasks`);
-    if (storedTasks) {
-      setTasks(JSON.parse(storedTasks));
+    try {
+      const response = await fetch(`/api/tasks?project_id=${projectId}`);
+      if (response.ok) {
+        const result = await response.json();
+        // Transform database tasks to component format
+        const transformedTasks = (result.data || []).map((task: any) => ({
+          ...task,
+          id: `task-${task.rowid}`, // For drag-and-drop compatibility
+          assignee: task.assignee_id || task.assignee?.employee_id,
+          dueDate: task.due_date,
+        }));
+        setTasks(transformedTasks);
+      }
+    } catch (error) {
+      console.error("Failed to fetch tasks:", error);
     }
-  };
-
-  const saveTasks = (newTasks: Task[]) => {
-    setTasks(newTasks);
-    localStorage.setItem(`project-${projectId}-tasks`, JSON.stringify(newTasks));
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -313,7 +337,7 @@ export function ProjectBoardContent() {
     setActiveTask(task || null);
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveTask(null);
 
@@ -325,19 +349,29 @@ export function ProjectBoardContent() {
     const overId = over.id as string;
     const isColumn = columns.some((c) => c.id === overId);
 
+    let newStatus: Task["status"];
     if (isColumn) {
-      const updatedTasks = tasks.map((task) =>
-        task.id === active.id ? { ...task, status: overId as Task["status"] } : task
-      );
-      saveTasks(updatedTasks);
+      newStatus = overId as Task["status"];
     } else {
       const overTask = tasks.find((t) => t.id === over.id);
-      if (overTask && activeTask.status !== overTask.status) {
-        const updatedTasks = tasks.map((task) =>
-          task.id === active.id ? { ...task, status: overTask.status } : task
-        );
-        saveTasks(updatedTasks);
-      }
+      if (!overTask || activeTask.status === overTask.status) return;
+      newStatus = overTask.status;
+    }
+
+    // Update task status in database
+    try {
+      await fetch("/api/tasks", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rowid: activeTask.rowid,
+          status: newStatus,
+        }),
+      });
+      // Fetch updated tasks (real-time sync will also handle this)
+      fetchTasks();
+    } catch (error) {
+      console.error("Failed to update task status:", error);
     }
   };
 
@@ -346,38 +380,61 @@ export function ProjectBoardContent() {
     setIsTaskDetailOpen(true);
   };
 
-  const handleUpdateTaskStatus = (newStatus: Task["status"]) => {
+  const handleUpdateTaskStatus = async (newStatus: Task["status"]) => {
     if (!selectedTask) return;
-    const updatedTasks = tasks.map((task) =>
-      task.id === selectedTask.id ? { ...task, status: newStatus } : task
-    );
-    saveTasks(updatedTasks);
-    setSelectedTask({ ...selectedTask, status: newStatus });
+    
+    try {
+      await fetch("/api/tasks", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rowid: selectedTask.rowid,
+          status: newStatus,
+        }),
+      });
+      setSelectedTask({ ...selectedTask, status: newStatus });
+      fetchTasks(); // Refresh tasks
+    } catch (error) {
+      console.error("Failed to update task status:", error);
+    }
   };
 
-  const handleAddTask = () => {
+  const handleAddTask = async () => {
     if (!newTask.title.trim()) return;
 
-    const task: Task = {
-      id: `task-${Date.now()}`,
-      title: newTask.title,
-      description: newTask.description,
-      status: newTask.status,
-      priority: newTask.priority,
-      assignee: newTask.assignee || undefined,
-      dueDate: newTask.dueDate || undefined,
-    };
+    try {
+      const response = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          project_id: projectId,
+          title: newTask.title,
+          description: newTask.description || null,
+          status: newTask.status,
+          priority: newTask.priority,
+          assignee_id: newTask.assignee || null,
+          due_date: newTask.dueDate || null,
+        }),
+      });
 
-    saveTasks([...tasks, task]);
-    setNewTask({
-      title: "",
-      description: "",
-      status: "todo",
-      priority: "medium",
-      assignee: "",
-      dueDate: "",
-    });
-    setIsAddTaskOpen(false);
+      if (response.ok) {
+        setNewTask({
+          title: "",
+          description: "",
+          status: "todo",
+          priority: "medium",
+          assignee: "",
+          dueDate: "",
+        });
+        setIsAddTaskOpen(false);
+        fetchTasks(); // Refresh tasks
+      } else {
+        const error = await response.json();
+        console.error("Failed to add task:", error);
+      }
+    } catch (error) {
+      console.error("Failed to add task:", error);
+    }
   };
 
   const getPriorityColor = (priority?: string) => {
@@ -839,14 +896,21 @@ export function ProjectBoardContent() {
                   <Label>Priority</Label>
                   <Select
                     value={selectedTask.priority || "medium"}
-                    onValueChange={(value) => {
-                      const updatedTasks = tasks.map((task) =>
-                        task.id === selectedTask.id
-                          ? { ...task, priority: value as Task["priority"] }
-                          : task
-                      );
-                      saveTasks(updatedTasks);
-                      setSelectedTask({ ...selectedTask, priority: value as Task["priority"] });
+                    onValueChange={async (value) => {
+                      try {
+                        await fetch("/api/tasks", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            rowid: selectedTask.rowid,
+                            priority: value,
+                          }),
+                        });
+                        setSelectedTask({ ...selectedTask, priority: value as Task["priority"] });
+                        fetchTasks(); // Refresh tasks
+                      } catch (error) {
+                        console.error("Failed to update task priority:", error);
+                      }
                     }}
                   >
                     <SelectTrigger>
@@ -875,10 +939,29 @@ export function ProjectBoardContent() {
                   </div>
                 )}
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsTaskDetailOpen(false)}>
-                  Close
+              <DialogFooter className="flex justify-between">
+                <Button
+                  variant="destructive"
+                  onClick={async () => {
+                    if (!selectedTask) return;
+                    if (!confirm("Are you sure you want to delete this task?")) return;
+                    
+                    try {
+                      await fetch(`/api/tasks?rowid=${selectedTask.rowid}`, {
+                        method: "DELETE",
+                      });
+                      setIsTaskDetailOpen(false);
+                      setSelectedTask(null);
+                      fetchTasks(); // Refresh tasks
+                    } catch (error) {
+                      console.error("Failed to delete task:", error);
+                    }
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Task
                 </Button>
+                <Button onClick={() => setIsTaskDetailOpen(false)}>Close</Button>
               </DialogFooter>
             </DialogContent>
           )}

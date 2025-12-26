@@ -1,4 +1,5 @@
 import { LeavesHeader } from "@/components/leaves-header";
+import { LeavesContent } from "@/components/leaves-content";
 
 export default function LeavesPage() {
   return (
@@ -8,13 +9,9 @@ export default function LeavesPage() {
         <LeavesHeader />
       </div>
 
-      {/* Main Content - Blank Container */}
+      {/* Main Content */}
       <div className="flex-1 overflow-auto w-full">
-        <div className="p-4 lg:p-8 w-full">
-          <div className="max-w-7xl mx-auto">
-            {/* Blank container - ready for content */}
-          </div>
-        </div>
+        <LeavesContent />
       </div>
     </div>
   );

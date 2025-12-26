@@ -211,9 +211,9 @@ async function getAttendanceReport(supabase: any, employeeId: string | null, sta
 
 // Leaves Report
 async function getLeavesReport(supabase: any, employeeId: string | null, startDate: string, endDate: string) {
-  // Check if leaves table exists, otherwise use attendance with leave status
+  // Use the leaves table
   let query = supabase
-    .from("attendance")
+    .from("leaves")
     .select(`
       *,
       employees:employee_id (
@@ -223,10 +223,9 @@ async function getLeavesReport(supabase: any, employeeId: string | null, startDa
         department
       )
     `)
-    .eq("status", "leave")
-    .gte("date", startDate)
-    .lte("date", endDate)
-    .order("date", { ascending: true });
+    .gte("start_date", startDate)
+    .lte("start_date", endDate)
+    .order("start_date", { ascending: true });
 
   if (employeeId) {
     query = query.eq("employee_id", employeeId);
@@ -238,16 +237,28 @@ async function getLeavesReport(supabase: any, employeeId: string | null, startDa
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Group by employee
-  const employeeLeaves: Record<string, { count: number; dates: string[] }> = {};
+  // Group by employee and calculate leave days
+  const employeeLeaves: Record<string, { count: number; days: number; dates: string[] }> = {};
   
   data?.forEach((record: any) => {
     const empId = record.employee_id;
     if (!employeeLeaves[empId]) {
-      employeeLeaves[empId] = { count: 0, dates: [] };
+      employeeLeaves[empId] = { count: 0, days: 0, dates: [] };
     }
     employeeLeaves[empId].count += 1;
-    employeeLeaves[empId].dates.push(record.date);
+    
+    // Calculate days for this leave
+    const start = new Date(record.start_date);
+    const end = record.end_date ? new Date(record.end_date) : start;
+    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    employeeLeaves[empId].days += days;
+    
+    // Add date range to dates array
+    if (record.leave_type === "multiple_days" && record.end_date) {
+      employeeLeaves[empId].dates.push(`${record.start_date} to ${record.end_date}`);
+    } else {
+      employeeLeaves[empId].dates.push(record.start_date);
+    }
   });
 
   const chartData = Object.keys(employeeLeaves).map(empId => {
@@ -256,6 +267,7 @@ async function getLeavesReport(supabase: any, employeeId: string | null, startDa
       employee: empData?.employees?.name || empId,
       employeeId: empId,
       leaveCount: employeeLeaves[empId].count,
+      leaveDays: employeeLeaves[empId].days,
       dates: employeeLeaves[empId].dates
     };
   });
@@ -263,9 +275,15 @@ async function getLeavesReport(supabase: any, employeeId: string | null, startDa
   // Monthly leave trend
   const monthlyTrend: Record<string, number> = {};
   data?.forEach((record: any) => {
-    const date = new Date(record.date);
+    const date = new Date(record.start_date);
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    monthlyTrend[monthKey] = (monthlyTrend[monthKey] || 0) + 1;
+    
+    // Calculate days for this leave
+    const start = new Date(record.start_date);
+    const end = record.end_date ? new Date(record.end_date) : start;
+    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    
+    monthlyTrend[monthKey] = (monthlyTrend[monthKey] || 0) + days;
   });
 
   const monthlyChartData = Object.keys(monthlyTrend).map(month => ({
@@ -273,12 +291,24 @@ async function getLeavesReport(supabase: any, employeeId: string | null, startDa
     count: monthlyTrend[month]
   })).sort((a, b) => a.month.localeCompare(b.month));
 
+  // Status breakdown
+  const statusBreakdown: Record<string, number> = {};
+  data?.forEach((record: any) => {
+    const status = record.status || "pending";
+    statusBreakdown[status] = (statusBreakdown[status] || 0) + 1;
+  });
+
   return NextResponse.json({
     employeeData: chartData,
     monthlyTrend: monthlyChartData,
+    statusBreakdown: Object.keys(statusBreakdown).map(status => ({
+      name: status.charAt(0).toUpperCase() + status.slice(1),
+      value: statusBreakdown[status]
+    })),
     raw: data,
     summary: {
       totalLeaves: data?.length || 0,
+      totalDays: Object.values(employeeLeaves).reduce((sum, emp) => sum + emp.days, 0),
       uniqueEmployees: new Set(data?.map((r: any) => r.employee_id)).size || 0
     }
   });
