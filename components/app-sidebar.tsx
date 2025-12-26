@@ -13,6 +13,8 @@ import {
   CalendarCheck,
   FolderKanban,
   CalendarX,
+  Timer,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -41,6 +43,11 @@ const menuItems: MenuItem[] = [
     icon: LayoutDashboard,
   },
   {
+    title: "Reports",
+    url: "/protected/reports",
+    icon: FileText,
+  },
+  {
     title: "Employees",
     url: "/protected/employees",
     icon: Users,
@@ -59,6 +66,11 @@ const menuItems: MenuItem[] = [
     title: "Leaves",
     url: "/protected/leaves",
     icon: CalendarX,
+  },
+  {
+    title: "Overtime",
+    url: "/protected/overtime",
+    icon: Timer,
   },
   {
     title: "Salary",
