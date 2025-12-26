@@ -1,7 +1,5 @@
 import { Suspense } from "react";
 import { EmployeeSidebar } from "@/components/employee-sidebar";
-import { SidebarProvider } from "@/components/sidebar-provider";
-import { AuthCheck } from "@/components/auth-check";
 
 export default function EmployeeLayout({
   children,
@@ -19,18 +17,15 @@ export default function EmployeeLayout({
         </div>
       </div>
     }>
-      <AuthCheck>
-        <SidebarProvider>
-          <div className="flex h-screen w-full overflow-hidden">
-            <EmployeeSidebar />
-            <main className="flex-1 overflow-auto lg:ml-0">
-              <div className="h-full w-full">
-                {children}
-              </div>
-            </main>
+      {/* SidebarProvider is already provided by ProtectedLayoutWrapper */}
+      <div className="flex h-screen w-full overflow-hidden">
+        <EmployeeSidebar />
+        <main className="flex-1 overflow-auto lg:ml-0">
+          <div className="h-full w-full">
+            {children}
           </div>
-        </SidebarProvider>
-      </AuthCheck>
+        </main>
+      </div>
     </Suspense>
   );
 }

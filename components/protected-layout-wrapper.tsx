@@ -16,7 +16,12 @@ export function ProtectedLayoutWrapper({
 
   if (isEmployeeRoute) {
     // Employee routes will use their own layout with EmployeeSidebar
-    return <>{children}</>;
+    // Still need SidebarProvider for EmployeeSidebar to work
+    return (
+      <SidebarProvider>
+        {children}
+      </SidebarProvider>
+    );
   }
 
   // Admin routes use AppSidebar
