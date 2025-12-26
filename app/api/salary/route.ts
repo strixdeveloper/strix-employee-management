@@ -241,12 +241,8 @@ async function generateSalaryPdfHtml(
               <td class="py-2 px-3 text-sm">${employee?.department ?? "________________"}</td>
             </tr>
             <tr class="border-b border-gray-300">
-              <td class="py-2 px-3 font-semibold text-sm">Month:</td>
-              <td class="py-2 px-3 text-sm">${monthName || "________"}</td>
-            </tr>
-            <tr class="border-b border-gray-300">
-              <td class="py-2 px-3 font-semibold text-sm">Year:</td>
-              <td class="py-2 px-3 text-sm">${salary.year}</td>
+              <td class="py-2 px-3 font-semibold text-sm">Month & Year:</td>
+              <td class="py-2 px-3 text-sm">${monthName || "________"} ${salary.year}</td>
             </tr>
           </tbody>
         </table>

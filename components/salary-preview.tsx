@@ -156,12 +156,8 @@ export function SalaryPreview({ formData, employee }: SalaryPreviewProps) {
                   <td className="py-2 px-3 text-sm">{employee?.department || "________________"}</td>
                 </tr>
                 <tr className="border-b border-gray-300">
-                  <td className="py-2 px-3 font-semibold text-sm">Month:</td>
-                  <td className="py-2 px-3 text-sm">{monthName || "________"}</td>
-                </tr>
-                <tr className="border-b border-gray-300">
-                  <td className="py-2 px-3 font-semibold text-sm">Year:</td>
-                  <td className="py-2 px-3 text-sm">{year}</td>
+                  <td className="py-2 px-3 font-semibold text-sm">Month & Year:</td>
+                  <td className="py-2 px-3 text-sm">{monthName || "________"} {year}</td>
                 </tr>
               </tbody>
             </table>
