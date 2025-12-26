@@ -12,6 +12,11 @@ import {
 } from "@/components/ui/table";
 import {
   Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
@@ -26,8 +31,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EmployeeForm } from "@/components/employee-form";
+import { CreateUserDialog } from "@/components/create-user-dialog";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 
 interface Employee {
   rowid: number;
@@ -38,6 +54,7 @@ interface Employee {
   department: string;
   created_at?: string;
   updated_at?: string;
+  user_role?: string | null; // Role from auth user if exists
 }
 
 export function EmployeesContent() {
@@ -48,6 +65,7 @@ export function EmployeesContent() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleteMultipleDialogOpen, setIsDeleteMultipleDialogOpen] = useState(false);
+  const [isCreateUserDialogOpen, setIsCreateUserDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [selectedRowIds, setSelectedRowIds] = useState<Set<number>>(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,7 +87,27 @@ export function EmployeesContent() {
       const response = await fetch("/api/employee");
       if (!response.ok) throw new Error("Failed to fetch employees");
       const result = await response.json();
-      setEmployees(result.data || []);
+      const employeesData = result.data || [];
+      
+      // Check user roles for each employee
+      const employeesWithRoles = await Promise.all(
+        employeesData.map(async (emp: Employee) => {
+          try {
+            const userCheckResponse = await fetch(`/api/auth/check-user?email=${encodeURIComponent(emp.email)}`);
+            if (userCheckResponse.ok) {
+              const userData = await userCheckResponse.json();
+              if (userData.exists) {
+                return { ...emp, user_role: userData.user.role };
+              }
+            }
+          } catch (error) {
+            console.error(`Failed to check user for ${emp.email}:`, error);
+          }
+          return { ...emp, user_role: null };
+        })
+      );
+      
+      setEmployees(employeesWithRoles);
     } catch (error) {
       showToast("Failed to load employees", "error");
     } finally {
@@ -160,6 +198,11 @@ export function EmployeesContent() {
   const openEditDialog = (employee: Employee) => {
     setSelectedEmployee(employee);
     setIsEditDialogOpen(true);
+  };
+
+  const openCreateUserDialog = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setIsCreateUserDialogOpen(true);
   };
 
   const openDeleteDialog = (employee: Employee) => {
@@ -356,11 +399,38 @@ export function EmployeesContent() {
                     <TableCell>{employee.designation}</TableCell>
                     <TableCell>{employee.department}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-2 items-center">
+                        {employee.user_role ? (
+                          <Badge 
+                            variant="secondary" 
+                            className="bg-gradient-to-r from-pink-500 to-fuchsia-500 text-white border-0 font-semibold"
+                          >
+                            {employee.user_role}
+                          </Badge>
+                        ) : (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => openCreateUserDialog(employee)}
+                                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Create User Account</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => openEditDialog(employee)}
+                          title="Edit Employee"
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -368,6 +438,7 @@ export function EmployeesContent() {
                           variant="ghost"
                           size="icon"
                           onClick={() => openDeleteDialog(employee)}
+                          title="Delete Employee"
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -416,6 +487,35 @@ export function EmployeesContent() {
                       <p>{employee.department}</p>
                     </div>
                     <div className="flex gap-2 pt-2">
+                      {employee.user_role ? (
+                        <div className="flex-1 flex items-center justify-center">
+                          <Badge 
+                            variant="secondary" 
+                            className="bg-gradient-to-r from-pink-500 to-fuchsia-500 text-white border-0 font-semibold"
+                          >
+                            {employee.user_role}
+                          </Badge>
+                        </div>
+                      ) : (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 text-blue-600 border-blue-200 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                onClick={() => openCreateUserDialog(employee)}
+                              >
+                                <Plus className="mr-2 h-4 w-4" />
+                                Create User
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Create User Account</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"
@@ -494,6 +594,17 @@ export function EmployeesContent() {
             </div>
           </div>
         )}
+
+        {/* Create User Dialog */}
+        <CreateUserDialog
+          open={isCreateUserDialogOpen}
+          onOpenChange={setIsCreateUserDialogOpen}
+          employee={selectedEmployee}
+          onSuccess={() => {
+            showToast("User account created successfully");
+            fetchEmployees();
+          }}
+        />
 
         {/* Edit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

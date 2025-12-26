@@ -33,13 +33,26 @@ export function LoginForm({
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (error) throw error;
-      // Update this route to redirect to an authenticated route. The user already has an active session.
-      router.push("/protected");
+      
+      // Check user role and redirect accordingly
+      if (data?.user) {
+        const role = data.user.user_metadata?.role || null;
+        // If role is "employee", redirect to employee dashboard
+        if (role === "employee") {
+          router.push("/protected/employee/dashboard");
+        } else {
+          // Admin or other roles go to main protected page
+          router.push("/protected");
+        }
+        router.refresh();
+      } else {
+        router.push("/protected");
+      }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {

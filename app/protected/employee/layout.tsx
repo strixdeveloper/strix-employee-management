@@ -1,8 +1,9 @@
 import { Suspense } from "react";
+import { EmployeeSidebar } from "@/components/employee-sidebar";
+import { SidebarProvider } from "@/components/sidebar-provider";
 import { AuthCheck } from "@/components/auth-check";
-import { ProtectedLayoutWrapper } from "@/components/protected-layout-wrapper";
 
-export default function ProtectedLayout({
+export default function EmployeeLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -19,10 +20,18 @@ export default function ProtectedLayout({
       </div>
     }>
       <AuthCheck>
-        <ProtectedLayoutWrapper>
-          {children}
-        </ProtectedLayoutWrapper>
+        <SidebarProvider>
+          <div className="flex h-screen w-full overflow-hidden">
+            <EmployeeSidebar />
+            <main className="flex-1 overflow-auto lg:ml-0">
+              <div className="h-full w-full">
+                {children}
+              </div>
+            </main>
+          </div>
+        </SidebarProvider>
       </AuthCheck>
     </Suspense>
   );
 }
+
