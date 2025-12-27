@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, Eye, Clock, Calendar, Users, FolderKanban, Filter, CheckCircle2, XCircle, Hourglass } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Clock, Calendar, Users, FolderKanban, Filter, CheckCircle2, XCircle, Hourglass, Coffee } from "lucide-react";
 import { OvertimeForm } from "@/components/overtime-form";
 import {
   Select,
@@ -66,6 +66,7 @@ interface Overtime {
   start_time: string;
   end_time: string;
   total_hours: number;
+  actual_working_hours?: number;
   description?: string;
   status: "pending" | "approved" | "rejected" | "paid";
   approved_by?: string;
@@ -437,8 +438,8 @@ export function OvertimeContent() {
                 <TableHead className="font-semibold">Date</TableHead>
                 <TableHead className="font-semibold">Type</TableHead>
                 <TableHead className="font-semibold">Time</TableHead>
-                <TableHead className="font-semibold">Hours</TableHead>
-                <TableHead className="font-semibold">Status</TableHead>
+                <TableHead className="font-semibold">Working Hours</TableHead>
+                <TableHead className="font-semibold">Break Time</TableHead>
                 <TableHead className="text-right font-semibold">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -471,6 +472,13 @@ export function OvertimeContent() {
                           <FolderKanban className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm">{record.projects.project_name}</span>
                         </div>
+                      ) : record.description ? (
+                        <div className="flex items-center gap-2">
+                          <FolderKanban className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">
+                            {record.description.split(" - ")[0] || record.description}
+                          </span>
+                        </div>
                       ) : (
                         <span className="text-muted-foreground text-sm">No project</span>
                       )}
@@ -496,16 +504,21 @@ export function OvertimeContent() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Hourglass className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-semibold">{record.total_hours.toFixed(2)}h</span>
+                        <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        <span className="font-semibold text-green-600 dark:text-green-400">
+                          {record.actual_working_hours?.toFixed(2) || record.total_hours.toFixed(2)}h
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        className={`${getStatusColor(record.status)} text-white text-xs`}
-                      >
-                        {record.status}
-                      </Badge>
+                      <div className="flex items-center gap-1">
+                        <Coffee className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                        <span className="font-semibold text-orange-600 dark:text-orange-400">
+                          {record.actual_working_hours 
+                            ? (record.total_hours - record.actual_working_hours).toFixed(2)
+                            : "0.00"}h
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
@@ -594,10 +607,32 @@ export function OvertimeContent() {
                         </div>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">Hours</p>
+                        <p className="text-xs text-muted-foreground mb-1">Total Hours</p>
                         <div className="flex items-center gap-1">
                           <Hourglass className="h-3 w-3 text-muted-foreground" />
                           <p className="text-sm font-semibold">{record.total_hours.toFixed(2)}h</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Working Hours</p>
+                        <div className="flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3 text-green-600 dark:text-green-400" />
+                          <p className="text-sm font-semibold text-green-600 dark:text-green-400">
+                            {record.actual_working_hours?.toFixed(2) || record.total_hours.toFixed(2)}h
+                          </p>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Break Time</p>
+                        <div className="flex items-center gap-1">
+                          <Coffee className="h-3 w-3 text-orange-600 dark:text-orange-400" />
+                          <p className="text-sm font-semibold text-orange-600 dark:text-orange-400">
+                            {record.actual_working_hours 
+                              ? (record.total_hours - record.actual_working_hours).toFixed(2)
+                              : "0.00"}h
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -765,9 +800,34 @@ export function OvertimeContent() {
                       <p className="text-sm text-muted-foreground mb-1">End Time</p>
                       <p className="font-medium">{formatTime(selectedOvertime.end_time)}</p>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Total Hours</p>
-                      <p className="font-semibold text-lg">{selectedOvertime.total_hours.toFixed(2)} hours</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t">
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Total Hours</p>
+                        <div className="flex items-center gap-2">
+                          <Hourglass className="h-4 w-4 text-muted-foreground" />
+                          <p className="font-semibold text-lg">{selectedOvertime.total_hours.toFixed(2)}h</p>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Working Hours</p>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          <p className="font-semibold text-lg text-green-600 dark:text-green-400">
+                            {selectedOvertime.actual_working_hours?.toFixed(2) || selectedOvertime.total_hours.toFixed(2)}h
+                          </p>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Break Time</p>
+                        <div className="flex items-center gap-2">
+                          <Coffee className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                          <p className="font-semibold text-lg text-orange-600 dark:text-orange-400">
+                            {selectedOvertime.actual_working_hours 
+                              ? (selectedOvertime.total_hours - selectedOvertime.actual_working_hours).toFixed(2)
+                              : "0.00"}h
+                          </p>
+                        </div>
+                      </div>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">Status</p>

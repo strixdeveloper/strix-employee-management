@@ -61,7 +61,6 @@ export function ProjectsContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [selectedRowIds, setSelectedRowIds] = useState<Set<number>>(new Set());
@@ -172,11 +171,6 @@ export function ProjectsContent() {
   const openEditDialog = (project: Project) => {
     setSelectedProject(project);
     setIsEditDialogOpen(true);
-  };
-
-  const openViewDialog = (project: Project) => {
-    setSelectedProject(project);
-    setIsViewDialogOpen(true);
   };
 
   const openDeleteDialog = (project: Project) => {
@@ -486,7 +480,7 @@ export function ProjectsContent() {
                         variant="outline"
                         size="sm"
                         className="flex-1"
-                        onClick={() => openViewDialog(project)}
+                        onClick={() => window.location.href = `/protected/projects/${project.rowid}`}
                       >
                         <Eye className="mr-2 h-4 w-4" />
                         View
@@ -582,88 +576,6 @@ export function ProjectsContent() {
               }}
               isLoading={isSubmitting}
             />
-          )}
-        </Dialog>
-
-        {/* View Dialog */}
-        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-          {selectedProject && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center">
-              <div className="bg-background border rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-auto">
-                <div className="p-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-2xl font-bold">{selectedProject.project_name}</h2>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setIsViewDialogOpen(false)}
-                    >
-                      ×
-                    </Button>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Description</p>
-                      <p>{selectedProject.project_description || "No description"}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Client</p>
-                      <p>{selectedProject.client_name || "N/A"}</p>
-                    </div>
-                    <div className="flex gap-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Priority</p>
-                        <Badge
-                          className={`${getPriorityColor(selectedProject.priority)} text-white`}
-                        >
-                          {selectedProject.priority}
-                        </Badge>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Status</p>
-                        <Badge
-                          className={`${getStatusColor(selectedProject.status)} text-white`}
-                        >
-                          {selectedProject.status.replace("_", " ")}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Deadline</p>
-                      <p>{formatDate(selectedProject.deadline)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Tracking Type</p>
-                      <p>
-                        {selectedProject.tracking_type === "tracking"
-                          ? `${selectedProject.tracking_hours || 0} hours`
-                          : `${selectedProject.fixed_days || 0} days`}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Assigned Employees</p>
-                      {selectedProject.assigned_employees && selectedProject.assigned_employees.length > 0 ? (
-                        <div className="mt-2 space-y-2">
-                          {selectedProject.assigned_employees.map((emp) => (
-                            <div key={emp.employee_id} className="flex items-center justify-between p-2 border rounded">
-                              <div>
-                                <p className="font-medium">{emp.name}</p>
-                                <p className="text-sm text-muted-foreground">{emp.designation}</p>
-                              </div>
-                              {emp.role && (
-                                <Badge variant="outline">{emp.role}</Badge>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-muted-foreground">No employees assigned</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
           )}
         </Dialog>
 

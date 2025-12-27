@@ -3,8 +3,9 @@
 import * as React from "react";
 import {
   LayoutDashboard,
-  CalendarCheck,
   CalendarX,
+  Clock,
+  DollarSign,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -27,14 +28,19 @@ const menuItems: MenuItem[] = [
     icon: LayoutDashboard,
   },
   {
-    title: "Attendance",
-    url: "/protected/employee/attendance",
-    icon: CalendarCheck,
+    title: "Salary",
+    url: "/protected/employee/salary",
+    icon: DollarSign,
   },
   {
     title: "Leaves",
     url: "/protected/employee/leaves",
     icon: CalendarX,
+  },
+  {
+    title: "Overtime",
+    url: "/protected/employee/overtime",
+    icon: Clock,
   },
 ];
 
