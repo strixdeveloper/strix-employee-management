@@ -1,7 +1,8 @@
-import { SignUpForm } from "@/components/sign-up-form";
+//import { SignUpForm } from "@/components/sign-up-form";
 import Image from "next/image";
 import Link from "next/link";
 import strixLogo from "../../Strix-logo-1.png";
+import { Button } from "@/components/ui/button";
 
 export default function Page() {
   return (
@@ -25,7 +26,16 @@ export default function Page() {
               />
             </Link>
           </div>
-          <SignUpForm />
+          <div className="flex flex-col gap-6">
+            <h1 className="text-2xl font-bold">Please Contact Admin to Sign Up</h1>
+            <p className="text-sm text-muted-foreground">
+              If you need to sign up, please contact the admin to get an account.
+            </p>
+            <Link href="/login" className="text-sm text-pink-600 hover:underline">
+             Login
+            </Link> 
+           
+          </div>
         </div>
       </div>
     </div>
