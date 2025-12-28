@@ -33,6 +33,8 @@ const DEPARTMENTS = [
   "Backend",
   "Business Development",
   "UI/UX",
+  "HR Department",
+  "Front Office Department",
 ] as const;
 
 const DESIGNATIONS = [
@@ -45,6 +47,8 @@ const DESIGNATIONS = [
   "backend Developer",
   "Business Development Executive",
   "Front Office Executive",
+  "Sr. Graphic Designer",
+  "Graphic Designer",
 ] as const;
 
 const employeeSchema = z.object({
