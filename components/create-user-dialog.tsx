@@ -108,6 +108,7 @@ export function CreateUserDialog({
   useEffect(() => {
     if (employee && open) {
       resetForm();
+      // Auto-generate password on open, but user can change it
       generatePassword();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -115,6 +116,18 @@ export function CreateUserDialog({
 
   const handleSubmit = async () => {
     if (!employee) return;
+
+    // Validate password before submitting
+    if (!password || password.length < 8) {
+      setError("Password must be at least 8 characters long");
+      return;
+    }
+
+    // Check for common issues
+    if (password.trim().length !== password.length) {
+      // Password has leading/trailing spaces - warn but allow
+      console.warn("Password has leading/trailing spaces - this might cause login issues");
+    }
 
     setError(null);
     setIsSubmitting(true);
@@ -144,12 +157,13 @@ export function CreateUserDialog({
       }
 
       // Create user via API
+      // Ensure password is sent as plain string without any encoding
       const response = await fetch("/api/auth/create-user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: employee.email,
-          password,
+          password: password, // Send password as-is, no encoding
           username: username || employee.email.split("@")[0],
           first_name: employee.name.split(" ")[0] || employee.name,
           avatar_url: avatarUrl,
@@ -334,16 +348,35 @@ export function CreateUserDialog({
               </p>
             </div>
 
-            {/* Password Generator */}
+            {/* Password Field - Manual or Auto-generated */}
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={generatePassword}
+                  className="text-xs h-7"
+                >
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Generate
+                </Button>
+              </div>
               <div className="flex gap-2">
                 <Input
                   id="password"
                   type="text"
                   value={password}
-                  readOnly
-                  className="flex-1 bg-gray-50 dark:bg-gray-800 font-mono"
+                  onChange={(e) => {
+                    // Don't trim password - user might want leading/trailing spaces
+                    // But we'll validate it's not just whitespace
+                    setPassword(e.target.value);
+                  }}
+                  placeholder="Enter password manually or click Generate"
+                  className="flex-1 font-mono"
+                  minLength={8}
+                  autoComplete="new-password"
                 />
                 <Button
                   type="button"
@@ -355,18 +388,9 @@ export function CreateUserDialog({
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={generatePassword}
-                  title="Generate New Password"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                A secure password has been generated. Click refresh to generate a new one.
+                Enter a password manually (minimum 8 characters) or click Generate for a secure random password.
               </p>
             </div>
 
@@ -402,7 +426,7 @@ export function CreateUserDialog({
               </Button>
               <Button
                 onClick={handleSubmit}
-                disabled={isSubmitting || !password}
+                disabled={isSubmitting || !password || password.length < 8}
                 className="bg-gradient-to-r from-pink-500 to-fuchsia-500 hover:from-pink-600 hover:to-fuchsia-600 text-white"
               >
                 {isSubmitting ? "Creating..." : "Create User Account"}

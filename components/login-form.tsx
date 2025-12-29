@@ -33,15 +33,43 @@ export function LoginForm({
     setError(null);
 
     try {
+      // Ensure password is sent as-is without any modification
+      const normalizedEmail = email.toLowerCase().trim();
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: normalizedEmail,
+        password: password, // Send password exactly as entered
       });
-      if (error) throw error;
+      
+      if (error) {
+        console.error("Login error:", error);
+        // Provide more helpful error messages
+        if (error.message.includes("Invalid login credentials")) {
+          throw new Error("Invalid email or password. Please check your credentials and try again.");
+        }
+        throw error;
+      }
+      
+      // Refresh session to ensure metadata is loaded
+      if (data?.session) {
+        const { data: sessionData, error: refreshError } = await supabase.auth.refreshSession(data.session);
+        
+        if (refreshError) {
+          console.warn("Session refresh error (non-critical):", refreshError);
+        }
+      }
       
       // Check user role and redirect accordingly
       if (data?.user) {
-        const role = data.user.user_metadata?.role || null;
+        // Get role from user_metadata - check both session and user object
+        const role = data.user.user_metadata?.role || data.session?.user?.user_metadata?.role || null;
+        
+        console.log("User logged in:", {
+          email: data.user.email,
+          role: role,
+          user_metadata: data.user.user_metadata,
+          session_user_metadata: data.session?.user?.user_metadata
+        });
+        
         // If role is "employee", redirect to employee dashboard
         if (role === "employee") {
           router.push("/protected/employee/dashboard");
@@ -54,7 +82,9 @@ export function LoginForm({
         router.push("/protected");
       }
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      console.error("Login error details:", error);
+      const errorMessage = error instanceof Error ? error.message : "An error occurred";
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
