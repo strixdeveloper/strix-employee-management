@@ -178,9 +178,19 @@ export async function PUT(request: NextRequest) {
           );
         }
       }
+      // Handle foreign key constraint violations
+      if (error.code === "23503") {
+        return NextResponse.json(
+          { 
+            error: "Cannot update employee. This employee has related records in salaries, overtime, attendance, or other tables. Please ensure the database trigger for cascading updates is installed.",
+            details: error.message
+          },
+          { status: 400 }
+        );
+      }
       return NextResponse.json(
         { error: error.message },
-        { status: 404 }
+        { status: 400 }
       );
     }
 
