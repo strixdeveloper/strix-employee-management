@@ -25,19 +25,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: "Invalid email format" },
+        { status: 400 }
+      );
+    }
+
+    // Validate password strength (minimum 8 characters)
+    if (password.length < 8) {
+      return NextResponse.json(
+        { error: "Password must be at least 8 characters long" },
+        { status: 400 }
+      );
+    }
+
     // Check if user already exists
-    const { data: existingUsers } = await supabase.auth.admin.listUsers();
-    const existingUser = existingUsers?.users?.find((u) => u.email === email);
+    const { data: existingUsers, error: listError } = await supabase.auth.admin.listUsers();
+    
+    if (listError) {
+      console.error("Error listing users:", listError);
+      return NextResponse.json(
+        { error: "Failed to check existing users" },
+        { status: 500 }
+      );
+    }
+
+    const existingUser = existingUsers?.users?.find((u) => u.email?.toLowerCase() === email.toLowerCase());
     if (existingUser) {
       return NextResponse.json(
-        { error: "User with this email already exists" },
-        { status: 400 }
+        { 
+          error: "User with this email already exists",
+          details: "A user account with this email is already registered. Please use a different email or reset the password."
+        },
+        { status: 409 }
       );
     }
 
     // Create user in Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email,
+      email: email.toLowerCase().trim(), // Normalize email
       password,
       email_confirm: true, // Auto-confirm email
       user_metadata: {
@@ -50,17 +79,36 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError) {
+      console.error("Auth error creating user:", authError);
       return NextResponse.json(
-        { error: authError.message },
+        { 
+          error: authError.message || "Failed to create user account",
+          details: authError.message
+        },
         { status: 500 }
       );
     }
 
     if (!authData.user) {
       return NextResponse.json(
-        { error: "Failed to create user" },
+        { error: "Failed to create user - no user data returned" },
         { status: 500 }
       );
+    }
+
+    // Verify user was created and email is confirmed
+    if (!authData.user.email_confirmed_at) {
+      // Force confirm the email
+      const { error: confirmError } = await supabase.auth.admin.updateUserById(
+        authData.user.id,
+        {
+          email_confirm: true,
+        }
+      );
+      
+      if (confirmError) {
+        console.error("Error confirming email:", confirmError);
+      }
     }
 
     // Update user metadata with role (if you have a custom user_metadata structure)
@@ -81,6 +129,15 @@ export async function POST(request: NextRequest) {
       // Don't fail the request, user is already created
     }
 
+    // Verify the user can be retrieved (sanity check)
+    const { data: verifyUser, error: verifyError } = await supabase.auth.admin.getUserById(
+      authData.user.id
+    );
+
+    if (verifyError) {
+      console.error("Error verifying created user:", verifyError);
+    }
+
     return NextResponse.json(
       {
         message: "User created successfully",
@@ -89,6 +146,7 @@ export async function POST(request: NextRequest) {
           email: authData.user.email,
           username: username || email.split("@")[0],
           role: role,
+          email_confirmed: !!authData.user.email_confirmed_at,
         },
       },
       { status: 201 }

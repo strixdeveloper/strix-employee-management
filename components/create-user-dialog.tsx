@@ -45,13 +45,16 @@ export function CreateUserDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [createdPassword, setCreatedPassword] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Generate secure password
+  // Generate secure password (avoiding characters that might cause encoding issues)
   const generatePassword = () => {
     const length = 16;
+    // Using safer special characters that are less likely to cause encoding issues
+    // Removed: & (ampersand) as it can cause URL encoding issues
     const charset =
-      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^*";
     let generatedPassword = "";
     for (let i = 0; i < length; i++) {
       generatedPassword += charset.charAt(
@@ -95,6 +98,7 @@ export function CreateUserDialog({
     setAvatarPreview(null);
     setError(null);
     setSuccess(false);
+    setCreatedPassword("");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -157,15 +161,20 @@ export function CreateUserDialog({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to create user");
+        const errorMessage = data.error || data.details || "Failed to create user";
+        throw new Error(errorMessage);
       }
 
+      // Store password temporarily to show in success message
+      setCreatedPassword(password);
       setSuccess(true);
+      
+      // Show success message with password for longer (5 seconds instead of 2)
       setTimeout(() => {
         onOpenChange(false);
         if (onSuccess) onSuccess();
         resetForm();
-      }, 2000);
+      }, 5000);
     } catch (err: any) {
       setError(err.message || "Failed to create user account");
     } finally {
@@ -196,12 +205,48 @@ export function CreateUserDialog({
             <div className="h-16 w-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
               <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
             </div>
-            <div className="text-center">
+            <div className="text-center space-y-3">
               <h3 className="text-lg font-semibold text-green-600 dark:text-green-400">
                 User Account Created Successfully!
               </h3>
+              <div className="space-y-2 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  Login Credentials:
+                </p>
+                <div className="text-left space-y-1">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    <span className="font-semibold">Email:</span> {employee.email}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 flex-1">
+                      <span className="font-semibold">Password:</span>{" "}
+                      <span className="font-mono bg-white dark:bg-gray-900 px-2 py-1 rounded border">
+                        {createdPassword || password}
+                      </span>
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        const pwd = createdPassword || password;
+                        if (pwd) {
+                          navigator.clipboard.writeText(pwd);
+                        }
+                      }}
+                      title="Copy Password"
+                      className="h-7 w-7"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 font-semibold">
+                  ⚠️ Please save these credentials. The password will not be shown again.
+                </p>
+              </div>
               <p className="text-sm text-muted-foreground mt-2">
-                The user can now login with their email and password.
+                The user can now login with the email and password shown above.
               </p>
             </div>
           </div>
