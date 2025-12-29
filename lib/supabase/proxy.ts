@@ -46,17 +46,38 @@ export async function updateSession(request: NextRequest) {
   // with the Supabase client, your users may be randomly logged out.
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
+  const pathname = request.nextUrl.pathname;
 
   if (
-    request.nextUrl.pathname !== "/" &&
+    pathname !== "/" &&
     !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth")
+    !pathname.startsWith("/login") &&
+    !pathname.startsWith("/auth")
   ) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
     return NextResponse.redirect(url);
+  }
+
+  // Role-based access control
+  if (user) {
+    // Get user role from claims metadata
+    const userRole = (user as any)?.user_metadata?.role || null;
+    // If role is empty/null, user is admin. Otherwise use the actual role
+    const role = (!userRole || userRole === "") ? "admin" : userRole;
+
+    // Employee routes: /protected/employee/*
+    const isEmployeeRoute = pathname.startsWith("/protected/employee/");
+    // Admin routes: /protected/* but NOT /protected/employee/*
+    const isAdminRoute = pathname.startsWith("/protected/") && !pathname.startsWith("/protected/employee/");
+
+    // If employee tries to access admin routes, redirect to employee dashboard
+    if (role === "employee" && isAdminRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/protected/employee/dashboard";
+      return NextResponse.redirect(url);
+    }
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
