@@ -124,9 +124,50 @@ export function DashboardContent() {
       const absentToday = filteredAttendance.filter(
         (a: any) => a.status === "absent"
       ).length;
-      const onLeaveToday = filteredAttendance.filter(
-        (a: any) => a.status === "leave"
-      ).length;
+
+      // Calculate on leave count from leaves table (only approved leaves)
+      let onLeaveToday = 0;
+      if (timePeriod === "today") {
+        // For today: count unique employees with approved leaves where today falls within the leave date range
+        const employeesOnLeaveToday = new Set(
+          leaves
+            .filter((l: any) => {
+              if (l.status !== "approved") return false;
+              const leaveStart = new Date(l.start_date);
+              leaveStart.setHours(0, 0, 0, 0);
+              const leaveEnd = l.end_date ? new Date(l.end_date) : new Date(l.start_date);
+              leaveEnd.setHours(23, 59, 59, 999);
+              const todayDate = new Date(today);
+              todayDate.setHours(0, 0, 0, 0);
+              return leaveStart <= todayDate && leaveEnd >= todayDate;
+            })
+            .map((l: any) => l.employee_id)
+        );
+        onLeaveToday = employeesOnLeaveToday.size;
+      } else if (timePeriod === "month") {
+        // For this month: count unique employees with approved leaves that overlap with the month
+        const monthEnd = new Date(today);
+        monthEnd.setHours(23, 59, 59, 999);
+        const monthStartDate = new Date(monthStart);
+        monthStartDate.setHours(0, 0, 0, 0);
+        const employeesOnLeaveThisMonth = new Set(
+          leaves
+            .filter((l: any) => {
+              if (l.status !== "approved") return false;
+              const leaveStart = new Date(l.start_date);
+              leaveStart.setHours(0, 0, 0, 0);
+              const leaveEnd = l.end_date ? new Date(l.end_date) : new Date(l.start_date);
+              leaveEnd.setHours(23, 59, 59, 999);
+              // Check if leave overlaps with month range
+              return leaveStart <= monthEnd && leaveEnd >= monthStartDate;
+            })
+            .map((l: any) => l.employee_id)
+        );
+        onLeaveToday = employeesOnLeaveThisMonth.size;
+      } else {
+        // For overall: count all approved leave records
+        onLeaveToday = leaves.filter((l: any) => l.status === "approved").length;
+      }
 
       // Calculate projects stats
       const totalProjects = projects.length;
